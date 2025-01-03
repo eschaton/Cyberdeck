@@ -1,6 +1,6 @@
 //
-//  AppDelegate.swift
-//  Cyberdeck
+//  CyberdeckUITestCase.swift
+//  CyberdeckUITests
 //
 //  Copyright © 2024-2025 Christopher M. Hanson
 //
@@ -17,26 +17,20 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import XCTest
 
-@main
-class AppDelegate: NSObject, NSApplicationDelegate {
+/// Base class for UI test cases for Cyberdeck.
+final class CyberdeckUITestCase: XCTestCase {
 
-    @IBOutlet var window: NSWindow!
+    override func setUpWithError() throws {
+        try super.setUpWithError()
 
-
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Insert code here to initialize your application
+        // Additional setup here.
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+    override func tearDownWithError() throws {
+        // Additional teardown here.
+
+        try super.tearDownWithError()
     }
-
-    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
-        return true
-    }
-
-
 }
-

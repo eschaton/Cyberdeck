@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9F5161F32D27638000AB8296 /* Cyber.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5161E92D27638000AB8296 /* Cyber.framework */; };
+		9F5161FE2D27638000AB8296 /* Cyber.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5161E92D27638000AB8296 /* Cyber.framework */; };
+		9F5161FF2D27638000AB8296 /* Cyber.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5161E92D27638000AB8296 /* Cyber.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9F5161C82D27636C00AB8296 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +27,51 @@
 			remoteGlobalIDString = 9F5161B72D27636B00AB8296;
 			remoteInfo = Cyberdeck;
 		};
+		9F5161F42D27638000AB8296 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9F5161B02D27636B00AB8296 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9F5161E82D27638000AB8296;
+			remoteInfo = Cyber;
+		};
+		9F5161F62D27638000AB8296 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9F5161B02D27636B00AB8296 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9F5161B72D27636B00AB8296;
+			remoteInfo = Cyberdeck;
+		};
+		9F5161FC2D27638000AB8296 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9F5161B02D27636B00AB8296 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9F5161E82D27638000AB8296;
+			remoteInfo = Cyber;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9F5162042D27638000AB8296 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				9F5161FF2D27638000AB8296 /* Cyber.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		9F5161B82D27636B00AB8296 /* Cyberdeck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cyberdeck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F5161C72D27636C00AB8296 /* CyberdeckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyberdeckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F5161D12D27636C00AB8296 /* CyberdeckUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyberdeckUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5161E92D27638000AB8296 /* Cyber.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Cyber.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5161F22D27638000AB8296 /* CyberTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5162462D27F55C00AB8296 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		9F5162472D27F55C00AB8296 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -45,6 +90,16 @@
 			path = CyberdeckUITests;
 			sourceTree = "<group>";
 		};
+		9F5161EA2D27638000AB8296 /* Cyber */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Cyber;
+			sourceTree = "<group>";
+		};
+		9F5161F82D27638000AB8296 /* CyberTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CyberTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F5161FE2D27638000AB8296 /* Cyber.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,15 +125,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9F5161E62D27638000AB8296 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161EF2D27638000AB8296 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9F5161F32D27638000AB8296 /* Cyber.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		9F5161AF2D27636B00AB8296 = {
 			isa = PBXGroup;
 			children = (
+				9F5162472D27F55C00AB8296 /* README.md */,
+				9F5162462D27F55C00AB8296 /* LICENSE */,
 				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
 				9F5161CA2D27636C00AB8296 /* CyberdeckTests */,
 				9F5161D42D27636C00AB8296 /* CyberdeckUITests */,
+				9F5161EA2D27638000AB8296 /* Cyber */,
+				9F5161F82D27638000AB8296 /* CyberTests */,
 				9F5161B92D27636B00AB8296 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,11 +163,23 @@
 				9F5161B82D27636B00AB8296 /* Cyberdeck.app */,
 				9F5161C72D27636C00AB8296 /* CyberdeckTests.xctest */,
 				9F5161D12D27636C00AB8296 /* CyberdeckUITests.xctest */,
+				9F5161E92D27638000AB8296 /* Cyber.framework */,
+				9F5161F22D27638000AB8296 /* CyberTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		9F5161E42D27638000AB8296 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		9F5161B72D27636B00AB8296 /* Cyberdeck */ = {
@@ -102,10 +189,12 @@
 				9F5161B42D27636B00AB8296 /* Sources */,
 				9F5161B52D27636B00AB8296 /* Frameworks */,
 				9F5161B62D27636B00AB8296 /* Resources */,
+				9F5162042D27638000AB8296 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				9F5161FD2D27638000AB8296 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
@@ -163,6 +252,53 @@
 			productReference = 9F5161D12D27636C00AB8296 /* CyberdeckUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		9F5161E82D27638000AB8296 /* Cyber */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9F5162012D27638000AB8296 /* Build configuration list for PBXNativeTarget "Cyber" */;
+			buildPhases = (
+				9F5161E42D27638000AB8296 /* Headers */,
+				9F5161E52D27638000AB8296 /* Sources */,
+				9F5161E62D27638000AB8296 /* Frameworks */,
+				9F5161E72D27638000AB8296 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9F5161EA2D27638000AB8296 /* Cyber */,
+			);
+			name = Cyber;
+			packageProductDependencies = (
+			);
+			productName = Cyber;
+			productReference = 9F5161E92D27638000AB8296 /* Cyber.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		9F5161F12D27638000AB8296 /* CyberTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9F5162052D27638000AB8296 /* Build configuration list for PBXNativeTarget "CyberTests" */;
+			buildPhases = (
+				9F5161EE2D27638000AB8296 /* Sources */,
+				9F5161EF2D27638000AB8296 /* Frameworks */,
+				9F5161F02D27638000AB8296 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9F5161F52D27638000AB8296 /* PBXTargetDependency */,
+				9F5161F72D27638000AB8296 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9F5161F82D27638000AB8296 /* CyberTests */,
+			);
+			name = CyberTests;
+			packageProductDependencies = (
+			);
+			productName = CyberTests;
+			productReference = 9F5161F22D27638000AB8296 /* CyberTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -172,6 +308,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
+				ORGANIZATIONNAME = "Christopher M. Hanson";
 				TargetAttributes = {
 					9F5161B72D27636B00AB8296 = {
 						CreatedOnToolsVersion = 16.2;
@@ -181,6 +318,13 @@
 						TestTargetID = 9F5161B72D27636B00AB8296;
 					};
 					9F5161D02D27636C00AB8296 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 9F5161B72D27636B00AB8296;
+					};
+					9F5161E82D27638000AB8296 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					9F5161F12D27638000AB8296 = {
 						CreatedOnToolsVersion = 16.2;
 						TestTargetID = 9F5161B72D27636B00AB8296;
 					};
@@ -203,6 +347,8 @@
 				9F5161B72D27636B00AB8296 /* Cyberdeck */,
 				9F5161C62D27636C00AB8296 /* CyberdeckTests */,
 				9F5161D02D27636C00AB8296 /* CyberdeckUITests */,
+				9F5161E82D27638000AB8296 /* Cyber */,
+				9F5161F12D27638000AB8296 /* CyberTests */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +369,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		9F5161CF2D27636C00AB8296 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161E72D27638000AB8296 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161F02D27638000AB8296 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +413,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9F5161E52D27638000AB8296 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161EE2D27638000AB8296 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +439,21 @@
 			isa = PBXTargetDependency;
 			target = 9F5161B72D27636B00AB8296 /* Cyberdeck */;
 			targetProxy = 9F5161D22D27636C00AB8296 /* PBXContainerItemProxy */;
+		};
+		9F5161F52D27638000AB8296 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9F5161E82D27638000AB8296 /* Cyber */;
+			targetProxy = 9F5161F42D27638000AB8296 /* PBXContainerItemProxy */;
+		};
+		9F5161F72D27638000AB8296 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9F5161B72D27636B00AB8296 /* Cyberdeck */;
+			targetProxy = 9F5161F62D27638000AB8296 /* PBXContainerItemProxy */;
+		};
+		9F5161FD2D27638000AB8296 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9F5161E82D27638000AB8296 /* Cyber */;
+			targetProxy = 9F5161FC2D27638000AB8296 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -394,21 +583,21 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Cyberdeck/Cyberdeck.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024–2024 Christopher M. Hanson. See file LICENSE for details.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.Cyberdeck;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -419,21 +608,21 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Cyberdeck/Cyberdeck.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024–2024 Christopher M. Hanson. See file LICENSE for details.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.Cyberdeck;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -449,7 +638,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cyberdeck.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cyberdeck";
 			};
 			name = Debug;
@@ -466,7 +655,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cyberdeck.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cyberdeck";
 			};
 			name = Release;
@@ -477,11 +666,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_TARGET_NAME = Cyberdeck;
 			};
 			name = Debug;
@@ -492,12 +682,109 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_TARGET_NAME = Cyberdeck;
+			};
+			name = Release;
+		};
+		9F5162022D27638000AB8296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024–2024 Christopher M. Hanson. See file LICENSE for details.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.Cyber;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 6.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		9F5162032D27638000AB8296 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024–2024 Christopher M. Hanson. See file LICENSE for details.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.Cyber;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 6.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		9F5162062D27638000AB8296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		9F5162072D27638000AB8296 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -536,6 +823,24 @@
 			buildConfigurations = (
 				9F5161E22D27636C00AB8296 /* Debug */,
 				9F5161E32D27636C00AB8296 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9F5162012D27638000AB8296 /* Build configuration list for PBXNativeTarget "Cyber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F5162022D27638000AB8296 /* Debug */,
+				9F5162032D27638000AB8296 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9F5162052D27638000AB8296 /* Build configuration list for PBXNativeTarget "CyberTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F5162062D27638000AB8296 /* Debug */,
+				9F5162072D27638000AB8296 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,6 +1,6 @@
 //
-//  AppDelegate.swift
-//  Cyberdeck
+//  CyberTestCase.swift
+//  CyberTests
 //
 //  Copyright © 2024-2025 Christopher M. Hanson
 //
@@ -17,26 +17,21 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import XCTest
+@testable import Cyber
 
-@main
-class AppDelegate: NSObject, NSApplicationDelegate {
+/// Base class for test cases for the Cyber emulation framework.
+final class CyberTestCase: XCTestCase {
 
-    @IBOutlet var window: NSWindow!
+    override func setUpWithError() throws {
+        try super.setUpWithError()
 
-
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Insert code here to initialize your application
+        // Additional setup here.
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+    override func tearDownWithError() throws {
+        // Additional teardown here.
+
+        try super.tearDownWithError()
     }
-
-    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
-        return true
-    }
-
-
 }
-
