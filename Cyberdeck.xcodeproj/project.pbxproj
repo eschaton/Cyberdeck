@@ -1,0 +1,546 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		9F5161C82D27636C00AB8296 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9F5161B02D27636B00AB8296 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9F5161B72D27636B00AB8296;
+			remoteInfo = Cyberdeck;
+		};
+		9F5161D22D27636C00AB8296 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9F5161B02D27636B00AB8296 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9F5161B72D27636B00AB8296;
+			remoteInfo = Cyberdeck;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		9F5161B82D27636B00AB8296 /* Cyberdeck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cyberdeck.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5161C72D27636C00AB8296 /* CyberdeckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyberdeckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5161D12D27636C00AB8296 /* CyberdeckUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyberdeckUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		9F5161BA2D27636B00AB8296 /* Cyberdeck */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Cyberdeck;
+			sourceTree = "<group>";
+		};
+		9F5161CA2D27636C00AB8296 /* CyberdeckTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CyberdeckTests;
+			sourceTree = "<group>";
+		};
+		9F5161D42D27636C00AB8296 /* CyberdeckUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CyberdeckUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9F5161B52D27636B00AB8296 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161C42D27636C00AB8296 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161CE2D27636C00AB8296 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9F5161AF2D27636B00AB8296 = {
+			isa = PBXGroup;
+			children = (
+				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
+				9F5161CA2D27636C00AB8296 /* CyberdeckTests */,
+				9F5161D42D27636C00AB8296 /* CyberdeckUITests */,
+				9F5161B92D27636B00AB8296 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9F5161B92D27636B00AB8296 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9F5161B82D27636B00AB8296 /* Cyberdeck.app */,
+				9F5161C72D27636C00AB8296 /* CyberdeckTests.xctest */,
+				9F5161D12D27636C00AB8296 /* CyberdeckUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9F5161B72D27636B00AB8296 /* Cyberdeck */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9F5161DB2D27636C00AB8296 /* Build configuration list for PBXNativeTarget "Cyberdeck" */;
+			buildPhases = (
+				9F5161B42D27636B00AB8296 /* Sources */,
+				9F5161B52D27636B00AB8296 /* Frameworks */,
+				9F5161B62D27636B00AB8296 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
+			);
+			name = Cyberdeck;
+			packageProductDependencies = (
+			);
+			productName = Cyberdeck;
+			productReference = 9F5161B82D27636B00AB8296 /* Cyberdeck.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9F5161C62D27636C00AB8296 /* CyberdeckTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9F5161DE2D27636C00AB8296 /* Build configuration list for PBXNativeTarget "CyberdeckTests" */;
+			buildPhases = (
+				9F5161C32D27636C00AB8296 /* Sources */,
+				9F5161C42D27636C00AB8296 /* Frameworks */,
+				9F5161C52D27636C00AB8296 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9F5161C92D27636C00AB8296 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9F5161CA2D27636C00AB8296 /* CyberdeckTests */,
+			);
+			name = CyberdeckTests;
+			packageProductDependencies = (
+			);
+			productName = CyberdeckTests;
+			productReference = 9F5161C72D27636C00AB8296 /* CyberdeckTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		9F5161D02D27636C00AB8296 /* CyberdeckUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9F5161E12D27636C00AB8296 /* Build configuration list for PBXNativeTarget "CyberdeckUITests" */;
+			buildPhases = (
+				9F5161CD2D27636C00AB8296 /* Sources */,
+				9F5161CE2D27636C00AB8296 /* Frameworks */,
+				9F5161CF2D27636C00AB8296 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9F5161D32D27636C00AB8296 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9F5161D42D27636C00AB8296 /* CyberdeckUITests */,
+			);
+			name = CyberdeckUITests;
+			packageProductDependencies = (
+			);
+			productName = CyberdeckUITests;
+			productReference = 9F5161D12D27636C00AB8296 /* CyberdeckUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9F5161B02D27636B00AB8296 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					9F5161B72D27636B00AB8296 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					9F5161C62D27636C00AB8296 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 9F5161B72D27636B00AB8296;
+					};
+					9F5161D02D27636C00AB8296 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 9F5161B72D27636B00AB8296;
+					};
+				};
+			};
+			buildConfigurationList = 9F5161B32D27636B00AB8296 /* Build configuration list for PBXProject "Cyberdeck" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9F5161AF2D27636B00AB8296;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9F5161B92D27636B00AB8296 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9F5161B72D27636B00AB8296 /* Cyberdeck */,
+				9F5161C62D27636C00AB8296 /* CyberdeckTests */,
+				9F5161D02D27636C00AB8296 /* CyberdeckUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9F5161B62D27636B00AB8296 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161C52D27636C00AB8296 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161CF2D27636C00AB8296 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9F5161B42D27636B00AB8296 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161C32D27636C00AB8296 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5161CD2D27636C00AB8296 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9F5161C92D27636C00AB8296 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9F5161B72D27636B00AB8296 /* Cyberdeck */;
+			targetProxy = 9F5161C82D27636C00AB8296 /* PBXContainerItemProxy */;
+		};
+		9F5161D32D27636C00AB8296 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9F5161B72D27636B00AB8296 /* Cyberdeck */;
+			targetProxy = 9F5161D22D27636C00AB8296 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		9F5161D92D27636C00AB8296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		9F5161DA2D27636C00AB8296 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		9F5161DC2D27636C00AB8296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Cyberdeck/Cyberdeck.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainNibFile = MainMenu;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.Cyberdeck;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9F5161DD2D27636C00AB8296 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Cyberdeck/Cyberdeck.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainNibFile = MainMenu;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.Cyberdeck;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		9F5161DF2D27636C00AB8296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cyberdeck.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cyberdeck";
+			};
+			name = Debug;
+		};
+		9F5161E02D27636C00AB8296 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cyberdeck.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cyberdeck";
+			};
+			name = Release;
+		};
+		9F5161E22D27636C00AB8296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Cyberdeck;
+			};
+			name = Debug;
+		};
+		9F5161E32D27636C00AB8296 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eschatologist.CyberdeckUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Cyberdeck;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9F5161B32D27636B00AB8296 /* Build configuration list for PBXProject "Cyberdeck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F5161D92D27636C00AB8296 /* Debug */,
+				9F5161DA2D27636C00AB8296 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9F5161DB2D27636C00AB8296 /* Build configuration list for PBXNativeTarget "Cyberdeck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F5161DC2D27636C00AB8296 /* Debug */,
+				9F5161DD2D27636C00AB8296 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9F5161DE2D27636C00AB8296 /* Build configuration list for PBXNativeTarget "CyberdeckTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F5161DF2D27636C00AB8296 /* Debug */,
+				9F5161E02D27636C00AB8296 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9F5161E12D27636C00AB8296 /* Build configuration list for PBXNativeTarget "CyberdeckUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F5161E22D27636C00AB8296 /* Debug */,
+				9F5161E32D27636C00AB8296 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9F5161B02D27636B00AB8296 /* Project object */;
+}
