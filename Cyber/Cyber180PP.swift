@@ -21,6 +21,8 @@
 /// A Cyber 180 Peripheral Processor
 ///
 /// The Cyber 180 does not do any I/O on its own; it uses a number of 16-bit Peripheral Processors to perform I/O on its behalf. These have either 4KW or 8KW of their own RAM and access to all of the Cyber 180 system's I/O channels, and can use those I/O channels on its behalf. They also have access to the entirety of the Cyber 180 systems' Central Memory, as a source or target for transfers.
+///
+/// - Note: Currently only the I0 processor model is emulated.
 class Cyber180PP {
 
     /// The different models of Peripheral Processor used in Cyber 180 systems.
@@ -33,7 +35,7 @@ class Cyber180PP {
     }
 
     /// The model of this peripheral processor.
-    let model: Model = .I4
+    let model: Model = .I0
 
     // MARK: - Registers
 
@@ -68,8 +70,8 @@ class Cyber180PP {
 
     // MARK: - PP Memory
 
-    /// Raw memory of 8KW.
-    internal var _memory: [UInt16] = Array(repeating: 0, count: (8 * 1024))
+    /// Raw memory of 16KW (since that's what the I0 model has).
+    internal var _memory: [UInt16] = Array(repeating: 0, count: (16 * 1024))
 
     func read(from address: UInt16) -> UInt16 {
         return _memory[Int(address)]
@@ -91,25 +93,154 @@ class Cyber180PP {
             return nil
         }
 
-        if let f16di  = Cyber180PPInstruction16d.decode(word: instructionWord, at: address)   { return f16di }
-        if let f16sci = Cyber180PPInstruction16sc.decode(word: instructionWord, at: address)  { return f16sci }
-        if let f32dmi = Cyber180PPInstruction32dm.decode(word: instructionWord, at: address)  { return f32dmi }
-        if let f32scmi = Cyber180PPInstruction32scm.decode(word: instructionWord, at: address) { return f32scmi }
+        if let f16di  = Cyber180PPInstruction16d.decode(word: instructionWord, at: address, on: self)    { return f16di }
+        if let f16sci = Cyber180PPInstruction16sc.decode(word: instructionWord, at: address, on: self)   { return f16sci }
+        if let f32dmi = Cyber180PPInstruction32dm.decode(word: instructionWord, at: address, on: self)   { return f32dmi }
+        if let f32scmi = Cyber180PPInstruction32scm.decode(word: instructionWord, at: address, on: self) { return f32scmi }
 
         return nil
     }
+
+    /// Execute one instruction.
+    func executeNextInstruction() {
+        let address = self.regP
+        guard let instruction = self.decode(at: address) else {
+            fatalError("Could not decode instruction at \(address)")
+        }
+
+        let shouldAdjustP = instruction.execute(on: self)
+        if shouldAdjustP {
+            let newP = address + instruction.stride
+            self.regP = newP
+        }
+    }
 }
 
+
+// MARK: - Address Modes
+
+/// The Cyber 180 Peripheral Processor has a small number of fairly orthogonal addressing modes.
+enum Cyber180PPAddressMode {
+
+    /// "No-Address" mode is what most other processors refer to as "immediate" mode, and treats `d` as a 6-bit quantity.
+    case noAddress(d: UInt8)
+
+    /// "Constant" mode is what most other processors refer to as "extended immediate" mode, where it treats the least significant 6 bits of `d` as the most significant bits and the least significant 12 bits of `m` as the least significant bits as an 18-bit quanitty.
+    case constant(d: UInt8, m: UInt16)
+
+    /// Direct mode uses the least significant 6 bits of `d` as the address of a 12-bit or 16-bit word in memory.
+    case direct(d: UInt8)
+
+    /// Indirect mode uses the least significant 6 bits of `d` as the address of a word in memory that is used as the address of the 12-bit or 16-bit word in memory.
+    case indirect(d: UInt8)
+
+    /// "Memory" mode is what most other processors refer to as "indexed" mode, and uses the `d` and `m` fields to compose the address of a 12-bit or 16-bit word in memory, according to the following rules:
+    ///
+    /// 1. If `d` is `0`, `m` is the address to use.
+    /// 2. If `d` is nonzero, `d` is the address of a 12-bit word that is added to `m` to generate an address.
+    case memory(d: UInt8, m: UInt16)
+
+    /// "Block I/O & Central Memory Access" mode is used to form addresses specifically for block I/O and Central Memory Access instructions.
+    case io(d: UInt8, m: UInt16)
+
+    /// The `d` value.
+    var d: UInt8 {
+        switch self {
+        case let .noAddress(d: d):      return d
+        case let .constant(d: d, m: _): return d
+        case let .direct(d: d):         return d
+        case let .indirect(d: d):       return d
+        case let .memory(d: d, m: _):   return d
+        case let .io(d: d, m: _):       return d
+        }
+    }
+
+    /// The `m` value.
+    var m: UInt16 {
+        switch self {
+        case let .constant(d: _, m: m): return m
+        case let .memory(d: _, m: m):   return m
+        case let .io(d: _, m: m):       return m
+        default:                        return 0
+        }
+    }
+
+    /// The combined `dm` value, an 18-bit quantity.
+    var dm: UInt32 {
+        let d32: UInt32 = UInt32(self.d & 0x3F)
+        let m32: UInt32 = UInt32(self.m & 0x0FFF)
+        return (d32 << 12) | m32
+    }
+
+    /// The `c` value, a 5-bit quantity derived from `d`.
+    var c: UInt8 {
+        return self.d & 0x1F
+    }
+
+    /// The `s` vaue, a boolean derived from `d`.
+    var s: Bool {
+        return (self.d & 0x20) == 0x20
+    }
+
+    /// Disassemble this effective address reference to the canonical format.
+    func disassemble() -> String {
+        switch self {
+        case let .noAddress(d: d):      return "\(d)"
+        case let .constant(d: d, m: m): return "\(m)+\(d)"
+        case let .direct(d: d):         return "(\(d))"
+        case let .indirect(d: d):       return "((\(d)))"
+        case let .memory(d: d, m: m):   return "(\(m)+(\(d)))"
+        case let .io(d: _, m: m):       return "\(self.c),\(m)"
+        }
+    }
+
+    /// Compute the effective address represented by this address mode on the given processor, or `nil` if one canot be computed (say for ``.noAddress`` and ``.constant(d:m:)`` modes.
+    func effectiveAddress(on processor: Cyber180PP) -> UInt16? {
+        switch self {
+        case .noAddress(d: _), .constant(d: _, m: _):
+            // These modes do not involve an address computation.
+            return nil
+
+        case let .direct(d: d):
+            return UInt16(d)
+
+        case let .indirect(d: d):
+            return processor.read(from: UInt16(d))
+
+        case let .memory(d: d, m: m):
+            return (d == 0) ? m : (m + processor.read(from: UInt16(d)))
+
+        case let .io(d: _, m: m):
+            // The `d` value is unused by effective address calculation by block I/O & Central Memory Access instructions, the `m` value is just an address.
+            return m
+        }
+    }
+}
+
+
+// MARK: - Instructions
 
 protocol Cyber180PPInstruction {
 
     /// The adjustment to apply to `P` to get the following instruction.
     var stride: UInt16 { get }
 
+    /// The addressing mode for this decoded instruction.
+    ///
+    /// While an instruction always has one of these, some specific instruction implementations may ignore it and use instruction fields directly.
+    var addressMode: Cyber180PPAddressMode { get }
+
+    /// The mnemonic representing this instruction in disassembly.
+    ///
+    /// For *most* instructions, their disassembly can be just the mnemonic, whitespace, and the disassembly of the address mode.
+    var mnemonic: String { get }
+
     /// Decode an instruction.
     ///
     /// Tries to decode an instruction of this type from the given word, returning `nil` if one isn't present.
-    static func decode(word: UInt16, at address: UInt16) -> Self?
+    ///
+    /// Since fully decoding an instruction may require an additional memory access, the processor must also be passed.
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self?
 
     /// Disassemble the instruction.
     func disassemble() -> String
@@ -129,6 +260,16 @@ extension Cyber180PPInstruction {
         let f: UInt8 = UInt8((word & 0x0FC0) >>  6)
         let d: UInt8 = UInt8((word & 0x003F) >>  0)
         return (g: g, f: f, d: d)
+    }
+
+    /// Default helper implementation, so it can be called by implementors of the protocol to simplify their implementation.
+    func defaultDisassemble() -> String {
+        return self.mnemonic + " " + self.addressMode.disassemble()
+    }
+
+    /// Default implementation.
+    func disassemble() -> String {
+        return self.defaultDisassemble()
     }
 }
 
@@ -210,7 +351,151 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
     case MXN
     case MAN
 
-    static func decode(word: UInt16, at address: UInt16) -> Self? {
+    var addressMode: Cyber180PPAddressMode {
+        switch self {
+        case let .LDN(d: d): return .noAddress(d: d)
+        case let .LCN(d: d): return .noAddress(d: d)
+        case let .LDD(d: d): return .direct(d: d)
+        case let .LDDL(d: d): return .direct(d: d)
+        case let .STD(d: d): return .direct(d: d)
+        case let .STDL(d: d): return .direct(d: d)
+        case let .LDI(d: d): return .indirect(d: d)
+        case let .LDIL(d: d): return .indirect(d: d)
+        case let .STI(d: d): return .indirect(d: d)
+        case let .STIL(d: d): return .indirect(d: d)
+        case let .ADN(d: d): return .noAddress(d: d)
+        case let .SBN(d: d): return .noAddress(d: d)
+        case let .ADD(d: d): return .direct(d: d)
+        case let .ADDL(d: d): return .direct(d: d)
+        case let .SBD(d: d): return .direct(d: d)
+        case let .SBDL(d: d): return .direct(d: d)
+        case let .ADI(d: d): return .indirect(d: d)
+        case let .ADIL(d: d): return .indirect(d: d)
+        case let .SBI(d: d): return .indirect(d: d)
+        case let .SBIL(d: d): return .indirect(d: d)
+        case let .SHN(d: d): return .noAddress(d: d)
+        case let .SHDL(d: d): return .direct(d: d)
+        case let .LMN(d: d): return .noAddress(d: d)
+        case let .LPN(d: d): return .noAddress(d: d)
+        case let .SCN(d: d): return .noAddress(d: d)
+        case let .LPDL(d: d): return .direct(d: d)
+        case let .LPIL(d: d): return .indirect(d: d)
+        case let .LMD(d: d): return .direct(d: d)
+        case let .LMDL(d: d): return .direct(d: d)
+        case let .LMI(d: d): return .indirect(d: d)
+        case let .LMIL(d: d): return .indirect(d: d)
+        case let .RAD(d: d): return .direct(d: d)
+        case let .RADL(d: d): return .direct(d: d)
+        case let .AOD(d: d): return .direct(d: d)
+        case let .AODL(d: d): return .direct(d: d)
+        case let .SOD(d: d): return .direct(d: d)
+        case let .SODL(d: d): return .direct(d: d)
+        case let .RAI(d: d): return  .indirect(d: d)
+        case let .RAIL(d: d): return .indirect(d: d)
+        case let .AOI(d: d): return  .indirect(d: d)
+        case let .AOIL(d: d): return .indirect(d: d)
+        case let .SOI(d: d): return  .indirect(d: d)
+        case let .SOIL(d: d): return .indirect(d: d)
+        case let .UNJ(d: d): return  .noAddress(d: d)
+        case let .ZJN(d: d): return  .noAddress(d: d)
+        case let .NJN(d: d): return  .noAddress(d: d)
+        case let .PJN(d: d): return  .noAddress(d: d)
+        case let .MJN(d: d): return  .noAddress(d: d)
+        case let .LRD(d: d): return  .direct(d: d)
+        case let .SRD(d: d): return  .direct(d: d)
+        case let .LRDL(d: d): return .direct(d: d)
+        case let .SRDL(d: d): return .direct(d: d)
+        case let .LRIL(d: d): return .indirect(d: d)
+        case let .SRIL(d: d): return .indirect(d: d)
+        case let .CRD(d: d): return  .direct(d: d)
+        case let .CRDL(d: d): return .direct(d: d)
+        case let .CWD(d: d): return  .direct(d: d)
+        case let .CWDL(d: d): return .direct(d: d)
+        case let .RDSL(d: d): return .direct(d: d)
+        case let .RDCL(d: d): return .direct(d: d)
+        case let .PSN(d: d): return  .noAddress(d: d)
+        case let .WAIT(d: d): return .noAddress(d: d)
+        case let .KEYP(d: d): return .noAddress(d: d)
+        case let .INPN(d: d): return .noAddress(d: d)
+        case .EXN: return .noAddress(d: 0)
+        case .MXN: return .noAddress(d: 0)
+        case .MAN: return .noAddress(d: 0)
+        }
+    }
+
+    var mnemonic: String {
+        switch self {
+        case .LDN(d: _):  return "LDN"
+        case .LCN(d: _):  return "LCN"
+        case .LDD(d: _):  return "LDD"
+        case .LDDL(d: _): return "LDDL"
+        case .STD(d: _):  return "STD"
+        case .STDL(d: _): return "STDL"
+        case .LDI(d: _):  return "LDI"
+        case .LDIL(d: _): return "LDIL"
+        case .STI(d: _):  return "STI"
+        case .STIL(d: _): return "STIL"
+        case .ADN(d: _):  return "ADN"
+        case .SBN(d: _):  return "SBN"
+        case .ADD(d: _):  return "ADD"
+        case .ADDL(d: _): return "ADDL"
+        case .SBD(d: _):  return "SBD"
+        case .SBDL(d: _): return "SBDL"
+        case .ADI(d: _):  return "ADI"
+        case .ADIL(d: _): return "ADIL"
+        case .SBI(d: _):  return "SBI"
+        case .SBIL(d: _): return "SBIL"
+        case .SHN(d: _):  return "SHN"
+        case .SHDL(d: _): return "SHDL"
+        case .LMN(d: _):  return "LMN"
+        case .LPN(d: _):  return "LPN"
+        case .SCN(d: _):  return "SCN"
+        case .LPDL(d: _): return "LPDL"
+        case .LPIL(d: _): return "LPIL"
+        case .LMD(d: _):  return "LMD"
+        case .LMDL(d: _): return "LMDL"
+        case .LMI(d: _):  return "LMI"
+        case .LMIL(d: _): return "LMIL"
+        case .RAD(d: _):  return "RAD"
+        case .RADL(d: _): return "RADL"
+        case .AOD(d: _):  return "AOD"
+        case .AODL(d: _): return "AODL"
+        case .SOD(d: _):  return "SOD"
+        case .SODL(d: _): return "SODL"
+        case .RAI(d: _):  return "RAI"
+        case .RAIL(d: _): return "RAIL"
+        case .AOI(d: _):  return "AOI"
+        case .AOIL(d: _): return "AOIL"
+        case .SOI(d: _):  return "SOI"
+        case .SOIL(d: _): return "SOIL"
+        case .UNJ(d: _):  return "UNJ"
+        case .ZJN(d: _):  return "ZJN"
+        case .NJN(d: _):  return "NJN"
+        case .PJN(d: _):  return "PJN"
+        case .MJN(d: _):  return "MJN"
+        case .LRD(d: _):  return "LRD"
+        case .SRD(d: _):  return "SRD"
+        case .LRDL(d: _): return "LRDL"
+        case .SRDL(d: _): return "SRDL"
+        case .LRIL(d: _): return "LRIL"
+        case .SRIL(d: _): return "SRIL"
+        case .CRD(d: _):  return "CRD"
+        case .CRDL(d: _): return "CRDL"
+        case .CWD(d: _):  return "CWD"
+        case .CWDL(d: _): return "CWDL"
+        case .RDSL(d: _): return "RDSL"
+        case .RDCL(d: _): return "RDCL"
+        case .PSN(d: _):  return "PSN"
+        case .WAIT(d: _): return "WAIT"
+        case .KEYP(d: _): return "KEYP"
+        case .INPN(d: _): return "INPN"
+        case .EXN:        return "EXN"
+        case .MXN:        return "MXN"
+        case .MAN:        return "MAN"
+        }
+    }
+
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
 
         switch f {
@@ -272,142 +557,77 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
 
     func disassemble() -> String {
         switch self {
-        case let .LDN(d: d): return "LDN \(d)"
-        case let .LCN(d: d): return "LCN \(d)"
-        case let .LDD(d: d): return "LDD \(d)"
-        case let .LDDL(d: d): return "LDDL \(d)"
-        case let .STD(d: d): return "STD \(d)"
-        case let .STDL(d: d): return "STDL \(d)"
-        case let .LDI(d: d): return "LDI \(d)"
-        case let .LDIL(d: d): return "LDIL \(d)"
-        case let .STI(d: d): return "STI \(d)"
-        case let .STIL(d: d): return "STIL \(d)"
-        case let .ADN(d: d): return "ADN \(d)"
-        case let .SBN(d: d): return "SBN \(d)"
-        case let .ADD(d: d): return "ADD \(d)"
-        case let .ADDL(d: d): return "ADDL \(d)"
-        case let .SBD(d: d): return "SBD \(d)"
-        case let .SBDL(d: d): return "SBDL \(d)"
-        case let .ADI(d: d): return "ADI \(d)"
-        case let .ADIL(d: d): return "ADIL \(d)"
-        case let .SBI(d: d): return "SBI \(d)"
-        case let .SBIL(d: d): return "SBIL \(d)"
-        case let .SHN(d: d): return "SHN \(d)"
-        case let .SHDL(d: d): return "SHDL \(d)"
-        case let .LMN(d: d): return "LMN \(d)"
-        case let .LPN(d: d): return "LPN \(d)"
-        case let .SCN(d: d): return "SCN \(d)"
-        case let .LPDL(d: d): return "LPDL \(d)"
-        case let .LPIL(d: d): return "LPIL \(d)"
-        case let .LMD(d: d): return "LMD \(d)"
-        case let .LMDL(d: d): return "LMDL \(d)"
-        case let .LMI(d: d): return "LMI \(d)"
-        case let .LMIL(d: d): return "LMIL \(d)"
-        case let .RAD(d: d): return "RAD \(d)"
-        case let .RADL(d: d): return "RADL \(d)"
-        case let .AOD(d: d): return "AOD \(d)"
-        case let .AODL(d: d): return "AODL \(d)"
-        case let .SOD(d: d): return "SOD \(d)"
-        case let .SODL(d: d): return "SODL \(d)"
-        case let .RAI(d: d): return "RAI \(d)"
-        case let .RAIL(d: d): return "RAIL \(d)"
-        case let .AOI(d: d): return "AOI \(d)"
-        case let .AOIL(d: d): return "AOIL \(d)"
-        case let .SOI(d: d): return "SOI \(d)"
-        case let .SOIL(d: d): return "SOIL \(d)"
-        case let .UNJ(d: d): return "UNJ \(d)"
-        case let .ZJN(d: d): return "ZJN \(d)"
-        case let .NJN(d: d): return "NJN \(d)"
-        case let .PJN(d: d): return "PJN \(d)"
-        case let .MJN(d: d): return "MJN \(d)"
-        case let .LRD(d: d): return "LRD \(d)"
-        case let .SRD(d: d): return "SRD \(d)"
-        case let .LRDL(d: d): return "LRDL \(d)"
-        case let .SRDL(d: d): return "SRDL \(d)"
-        case let .LRIL(d: d): return "LRIL \(d)"
-        case let .SRIL(d: d): return "SRIL \(d)"
-        case let .CRD(d: d): return "CRD \(d)"
-        case let .CRDL(d: d): return "CRDL \(d)"
-        case let .CWD(d: d): return "CWD \(d)"
-        case let .CWDL(d: d): return "CWDL \(d)"
-        case let .RDSL(d: d): return "RDSL \(d)"
-        case let .RDCL(d: d): return "RDCL \(d)"
-        case let .PSN(d: d): return "PSN \(d)"
-        case let .WAIT(d: d): return "WAIT \(d)"
-        case let .KEYP(d: d): return "KEYP \(d)"
-        case let .INPN(d: d): return "INPN \(d)"
-        case .EXN: return "EXN"
-        case .MXN: return "MXN"
-        case .MAN: return "MAN"
+        case .EXN, .MXN, .MAN: return mnemonic
+        default: return self.defaultDisassemble()
         }
     }
 
     func execute(on processor: Cyber180PP) -> Bool {
         switch self {
-        case let .LDN(d: d): LDN(on: processor, d: d)
-        case let .LCN(d: d): LCN(on: processor, d: d)
-        case let .LDD(d: d): LDD(on: processor, d: d)
-        case let .LDDL(d: d): LDDL(on: processor, d: d)
-        case let .STD(d: d): STD(on: processor, d: d)
-        case let .STDL(d: d): STDL(on: processor, d: d)
-        case let .LDI(d: d): LDI(on: processor, d: d)
-        case let .LDIL(d: d): LDIL(on: processor, d: d)
-        case let .STI(d: d): STI(on: processor, d: d)
-        case let .STIL(d: d): STIL(on: processor, d: d)
-        case let .ADN(d: d): ADN(on: processor, d: d)
-        case let .SBN(d: d): SBN(on: processor, d: d)
-        case let .ADD(d: d): ADD(on: processor, d: d)
-        case let .ADDL(d: d): ADDL(on: processor, d: d)
-        case let .SBD(d: d): SBD(on: processor, d: d)
-        case let .SBDL(d: d): SBDL(on: processor, d: d)
-        case let .ADI(d: d): ADI(on: processor, d: d)
-        case let .ADIL(d: d): ADIL(on: processor, d: d)
-        case let .SBI(d: d): SBI(on: processor, d: d)
-        case let .SBIL(d: d): SBIL(on: processor, d: d)
-        case let .SHN(d: d): SHN(on: processor, d: d)
-        case let .SHDL(d: d): SHDL(on: processor, d: d)
-        case let .LMN(d: d): LMN(on: processor, d: d)
-        case let .LPN(d: d): LPN(on: processor, d: d)
-        case let .SCN(d: d): SCN(on: processor, d: d)
-        case let .LPDL(d: d): LPDL(on: processor, d: d)
-        case let .LPIL(d: d): LPIL(on: processor, d: d)
-        case let .LMD(d: d): LMD(on: processor, d: d)
-        case let .LMDL(d: d): LMDL(on: processor, d: d)
-        case let .LMI(d: d): LMI(on: processor, d: d)
-        case let .LMIL(d: d): LMIL(on: processor, d: d)
-        case let .RAD(d: d): RAD(on: processor, d: d)
-        case let .RADL(d: d): RADL(on: processor, d: d)
-        case let .AOD(d: d): AOD(on: processor, d: d)
-        case let .AODL(d: d): AODL(on: processor, d: d)
-        case let .SOD(d: d): SOD(on: processor, d: d)
-        case let .SODL(d: d): SODL(on: processor, d: d)
-        case let .RAI(d: d): RAI(on: processor, d: d)
-        case let .RAIL(d: d): RAIL(on: processor, d: d)
-        case let .AOI(d: d): AOI(on: processor, d: d)
-        case let .AOIL(d: d): AOIL(on: processor, d: d)
-        case let .SOI(d: d): SOI(on: processor, d: d)
-        case let .SOIL(d: d): SOIL(on: processor, d: d)
-        case let .UNJ(d: d): UNJ(on: processor, d: d)
-        case let .ZJN(d: d): ZJN(on: processor, d: d)
-        case let .NJN(d: d): NJN(on: processor, d: d)
-        case let .PJN(d: d): PJN(on: processor, d: d)
-        case let .MJN(d: d): MJN(on: processor, d: d)
-        case let .LRD(d: d): LRD(on: processor, d: d)
-        case let .SRD(d: d): SRD(on: processor, d: d)
-        case let .LRDL(d: d): LRDL(on: processor, d: d)
-        case let .SRDL(d: d): SRDL(on: processor, d: d)
-        case let .LRIL(d: d): LRIL(on: processor, d: d)
-        case let .SRIL(d: d): SRIL(on: processor, d: d)
-        case let .CRD(d: d): CRD(on: processor, d: d)
-        case let .CRDL(d: d): CRDL(on: processor, d: d)
-        case let .CWD(d: d): CWD(on: processor, d: d)
-        case let .CWDL(d: d): CWDL(on: processor, d: d)
-        case let .RDSL(d: d): RDSL(on: processor, d: d)
-        case let .RDCL(d: d): RDCL(on: processor, d: d)
-        case let .PSN(d: d): PSN(on: processor, d: d)
-        case let .WAIT(d: d): WAIT(on: processor, d: d)
-        case let .KEYP(d: d): KEYP(on: processor, d: d)
-        case let .INPN(d: d): INPN(on: processor, d: d)
+        case .LDN(d: _): LDN(on: processor)
+        case .LCN(d: _): LCN(on: processor)
+        case .LDD(d: _): LDD(on: processor)
+        case .LDDL(d: _): LDDL(on: processor)
+        case .STD(d: _): STD(on: processor)
+        case .STDL(d: _): STDL(on: processor)
+        case .LDI(d: _): LDI(on: processor)
+        case .LDIL(d: _): LDIL(on: processor)
+        case .STI(d: _): STI(on: processor)
+        case .STIL(d: _): STIL(on: processor)
+        case .ADN(d: _): ADN(on: processor)
+        case .SBN(d: _): SBN(on: processor)
+        case .ADD(d: _): ADD(on: processor)
+        case .ADDL(d: _): ADDL(on: processor)
+        case .SBD(d: _): SBD(on: processor)
+        case .SBDL(d: _): SBDL(on: processor)
+        case .ADI(d: _): ADI(on: processor)
+        case .ADIL(d: _): ADIL(on: processor)
+        case .SBI(d: _): SBI(on: processor)
+        case .SBIL(d: _): SBIL(on: processor)
+        case .SHN(d: _): SHN(on: processor)
+        case .SHDL(d: _): SHDL(on: processor)
+        case .LMN(d: _): LMN(on: processor)
+        case .LPN(d: _): LPN(on: processor)
+        case .SCN(d: _): SCN(on: processor)
+        case .LPDL(d: _): LPDL(on: processor)
+        case .LPIL(d: _): LPIL(on: processor)
+        case .LMD(d: _): LMD(on: processor)
+        case .LMDL(d: _): LMDL(on: processor)
+        case .LMI(d: _): LMI(on: processor)
+        case .LMIL(d: _): LMIL(on: processor)
+        case .RAD(d: _): RAD(on: processor)
+        case .RADL(d: _): RADL(on: processor)
+        case .AOD(d: _): AOD(on: processor)
+        case .AODL(d: _): AODL(on: processor)
+        case .SOD(d: _): SOD(on: processor)
+        case .SODL(d: _): SODL(on: processor)
+        case .RAI(d: _): RAI(on: processor)
+        case .RAIL(d: _): RAIL(on: processor)
+        case .AOI(d: _): AOI(on: processor)
+        case .AOIL(d: _): AOIL(on: processor)
+        case .SOI(d: _): SOI(on: processor)
+        case .SOIL(d: _): SOIL(on: processor)
+        case .UNJ(d: _): UNJ(on: processor)
+        case .ZJN(d: _): ZJN(on: processor)
+        case .NJN(d: _): NJN(on: processor)
+        case .PJN(d: _): PJN(on: processor)
+        case .MJN(d: _): MJN(on: processor)
+        case .LRD(d: _): LRD(on: processor)
+        case .SRD(d: _): SRD(on: processor)
+        case .LRDL(d: _): LRDL(on: processor)
+        case .SRDL(d: _): SRDL(on: processor)
+        case .LRIL(d: _): LRIL(on: processor)
+        case .SRIL(d: _): SRIL(on: processor)
+        case .CRD(d: _): CRD(on: processor)
+        case .CRDL(d: _): CRDL(on: processor)
+        case .CWD(d: _): CWD(on: processor)
+        case .CWDL(d: _): CWDL(on: processor)
+        case .RDSL(d: _): RDSL(on: processor)
+        case .RDCL(d: _): RDCL(on: processor)
+        case .PSN(d: _): PSN(on: processor)
+        case .WAIT(d: _): WAIT(on: processor)
+        case .KEYP(d: _): KEYP(on: processor)
+        case .INPN(d: _): INPN(on: processor)
         case .EXN: EXN(on: processor)
         case .MXN: MXN(on: processor)
         case .MAN: MAN(on: processor)
@@ -415,276 +635,248 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
         return true
     }
 
-    internal func LDN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LDN
+    internal func load(on processor: Cyber180PP, long: Bool = false) {
+        let mode = self.addressMode
+        let value: UInt32
+        if let address = mode.effectiveAddress(on: processor) {
+            let mask: UInt16 = long ? 0xFFFF : 0x0FFF
+            value = UInt32(processor.read(from: address) & mask)
+        } else {
+            value = mode.dm
+        }
+        processor.regA = value
     }
 
-    internal func LCN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LCN
+    internal func loadComplement(on processor: Cyber180PP) {
+        let dc: UInt32 = UInt32(~self.addressMode.d & 0x3F)
+        let newA: UInt32 = 0x0003_FFC0 | dc
+        processor.regA = newA
     }
 
-    internal func LDD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LDD
+    internal func store(on processor: Cyber180PP, long: Bool = false) {
+        let mode = self.addressMode
+        let mask: UInt32 = long ? 0x0000_FFFF : 0x0000_0FFF
+        let value: UInt16 = UInt16(processor.regA & mask)
+        if let address = mode.effectiveAddress(on: processor) {
+            processor.write(value, to: address)
+        } else {
+            fatalError("store only operates on memory")
+        }
     }
 
-    internal func LDDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LDDL
+    internal func LDN(on processor: Cyber180PP) {
+        self.load(on: processor)
     }
 
-    internal func STD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement STD
+    internal func LCN(on processor: Cyber180PP) {
+        self.loadComplement(on: processor)
     }
 
-    internal func STDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement STDL
+    internal func LDD(on processor: Cyber180PP) {
+        self.load(on: processor)
     }
 
-    internal func LDI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LDI
+    internal func LDDL(on processor: Cyber180PP) {
+        self.load(on: processor, long: true)
     }
 
-    internal func LDIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LDIL
+    internal func STD(on processor: Cyber180PP) {
+        self.store(on: processor)
     }
 
-    internal func STI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement STI
+    internal func STDL(on processor: Cyber180PP) {
+        self.store(on: processor, long: true)
     }
 
-    internal func STIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement STIL
+    internal func LDI(on processor: Cyber180PP) {
+        self.load(on: processor)
     }
 
-    internal func ADN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement ADN
+    internal func LDIL(on processor: Cyber180PP) {
+        self.load(on: processor, long: true)
     }
 
-    internal func SBN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SBN
+    internal func STI(on processor: Cyber180PP) {
+        self.store(on: processor)
     }
 
-    internal func ADD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement ADD
+    internal func STIL(on processor: Cyber180PP) {
+        self.store(on: processor, long: true)
     }
 
-    internal func ADDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement ADDL
+    internal func ADN(on processor: Cyber180PP) {
     }
 
-    internal func SBD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SBD
+    internal func SBN(on processor: Cyber180PP) {
     }
 
-    internal func SBDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SBDL
+    internal func ADD(on processor: Cyber180PP) {
     }
 
-    internal func ADI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement ADI
+    internal func ADDL(on processor: Cyber180PP) {
     }
 
-    internal func ADIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement ADIL
+    internal func SBD(on processor: Cyber180PP) {
     }
 
-    internal func SBI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SBI
+    internal func SBDL(on processor: Cyber180PP) {
     }
 
-    internal func SBIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SBIL
+    internal func ADI(on processor: Cyber180PP) {
     }
 
-    internal func SHN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SHN
+    internal func ADIL(on processor: Cyber180PP) {
     }
 
-    internal func SHDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SHDL
+    internal func SBI(on processor: Cyber180PP) {
     }
 
-    internal func LMN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LMN
+    internal func SBIL(on processor: Cyber180PP) {
     }
 
-    internal func LPN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LPN
+    internal func SHN(on processor: Cyber180PP) {
     }
 
-    internal func SCN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SCN
+    internal func SHDL(on processor: Cyber180PP) {
     }
 
-    internal func LPDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LPDL
+    internal func LMN(on processor: Cyber180PP) {
     }
 
-    internal func LPIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LPIL
+    internal func LPN(on processor: Cyber180PP) {
     }
 
-    internal func LMD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LMD
+    internal func SCN(on processor: Cyber180PP) {
     }
 
-    internal func LMDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LMDL
+    internal func LPDL(on processor: Cyber180PP) {
     }
 
-    internal func LMI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LMI
+    internal func LPIL(on processor: Cyber180PP) {
     }
 
-    internal func LMIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LMIL
+    internal func LMD(on processor: Cyber180PP) {
     }
 
-    internal func RAD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement RAD
+    internal func LMDL(on processor: Cyber180PP) {
     }
 
-    internal func RADL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement RADL
+    internal func LMI(on processor: Cyber180PP) {
     }
 
-    internal func AOD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement AOD
+    internal func LMIL(on processor: Cyber180PP) {
     }
 
-    internal func AODL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement AODL
+    internal func RAD(on processor: Cyber180PP) {
     }
 
-    internal func SOD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SOD
+    internal func RADL(on processor: Cyber180PP) {
     }
 
-    internal func SODL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SODL
+    internal func AOD(on processor: Cyber180PP) {
     }
 
-    internal func RAI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement RAI
+    internal func AODL(on processor: Cyber180PP) {
     }
 
-    internal func RAIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement RAIL
+    internal func SOD(on processor: Cyber180PP) {
     }
 
-    internal func AOI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement AOI
+    internal func SODL(on processor: Cyber180PP) {
     }
 
-    internal func AOIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement AOIL
+    internal func RAI(on processor: Cyber180PP) {
     }
 
-    internal func SOI(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SOI
+    internal func RAIL(on processor: Cyber180PP) {
     }
 
-    internal func SOIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SOIL
+    internal func AOI(on processor: Cyber180PP) {
     }
 
-    internal func UNJ(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement UNJ
+    internal func AOIL(on processor: Cyber180PP) {
     }
 
-    internal func ZJN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement ZJN
+    internal func SOI(on processor: Cyber180PP) {
     }
 
-    internal func NJN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement NJN
+    internal func SOIL(on processor: Cyber180PP) {
     }
 
-    internal func PJN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement PJN
+    internal func UNJ(on processor: Cyber180PP) {
     }
 
-    internal func MJN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement MJN
+    internal func ZJN(on processor: Cyber180PP) {
     }
 
-    internal func LRD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LRD
+    internal func NJN(on processor: Cyber180PP) {
     }
 
-    internal func SRD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SRD
+    internal func PJN(on processor: Cyber180PP) {
     }
 
-    internal func LRDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LRDL
+    internal func MJN(on processor: Cyber180PP) {
     }
 
-    internal func SRDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SRDL
+    internal func LRD(on processor: Cyber180PP) {
     }
 
-    internal func LRIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement LRIL
+    internal func SRD(on processor: Cyber180PP) {
     }
 
-    internal func SRIL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement SRIL
+    internal func LRDL(on processor: Cyber180PP) {
     }
 
-    internal func CRD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement CRD
+    internal func SRDL(on processor: Cyber180PP) {
     }
 
-    internal func CRDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement CRDL
+    internal func LRIL(on processor: Cyber180PP) {
     }
 
-    internal func CWD(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement CWD
+    internal func SRIL(on processor: Cyber180PP) {
     }
 
-    internal func CWDL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement CWDL
+    internal func CRD(on processor: Cyber180PP) {
     }
 
-    internal func RDSL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement RDSL
+    internal func CRDL(on processor: Cyber180PP) {
     }
 
-    internal func RDCL(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement RDCL
+    internal func CWD(on processor: Cyber180PP) {
     }
 
-    internal func PSN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement PSN
+    internal func CWDL(on processor: Cyber180PP) {
     }
 
-    internal func WAIT(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement WAIT
+    internal func RDSL(on processor: Cyber180PP) {
     }
 
-    internal func KEYP(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement KEYP
+    internal func RDCL(on processor: Cyber180PP) {
     }
 
-    internal func INPN(on processor: Cyber180PP, d: UInt8) {
-        // TODO: Implement INPN
+    internal func PSN(on processor: Cyber180PP) {
+    }
+
+    internal func WAIT(on processor: Cyber180PP) {
+    }
+
+    internal func KEYP(on processor: Cyber180PP) {
+    }
+
+    internal func INPN(on processor: Cyber180PP) {
     }
 
     internal func EXN(on processor: Cyber180PP) {
-        // TODO: Implement EXN
     }
 
     internal func MXN(on processor: Cyber180PP) {
-        // TODO: Implement MXN
     }
 
     internal func MAN(on processor: Cyber180PP) {
-        // TODO: Implement MAN
     }
 }
 
-/// A 16-bit Cyber 180 Peripheral Processor `c`-format instruction.
+/// A 16-bit Cyber 180 Peripheral Processor `sc`-format instruction.
 ///
 /// A 16sc instruction has the format:
 ///
@@ -701,7 +893,44 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
     case FAN(s: Bool, c: UInt8) // 0076sc
     case MCLR(c: UInt8) // 1074xc
 
-    static func decode(word: UInt16, at address: UInt16) -> Self? {
+    var addressMode: Cyber180PPAddressMode {
+        switch self {
+        case let .IAN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
+        case let .OAN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
+        case let .ACN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
+        case let .DCN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
+        case let .FAN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
+        case let .MCLR(c: c):      return .noAddress(d: c)
+        }
+    }
+
+    var mnemonic: String {
+        func ss(_ s: Bool) -> String {
+            return s ? ".W" : ".I"
+        }
+
+        switch self {
+        case let .IAN(s: s, c: _): return "IAN\(ss(s))"
+        case let .OAN(s: s, c: _): return "OAN\(ss(s))"
+        case let .ACN(s: s, c: _): return "ACN\(ss(s))"
+        case let .DCN(s: s, c: _): return "DCN\(ss(s))"
+        case let .FAN(s: s, c: _): return "FAN\(ss(s))"
+        case     .MCLR(c: _):      return "MCLR"
+        }
+    }
+
+    var c: UInt8 {
+        switch self {
+        case let .IAN(s: _, c: c): return c
+        case let .OAN(s: _, c: c): return c
+        case let .ACN(s: _, c: c): return c
+        case let .DCN(s: _, c: c): return c
+        case let .FAN(s: _, c: c): return c
+        case let .MCLR(c: c):      return c
+        }
+    }
+
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
         let s = (d & 0o40) == 0o40
         let c = (d & 0o37)
@@ -723,54 +952,37 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
     }
 
     func disassemble() -> String {
-        func ss(_ s: Bool) -> String {
-            return s ? "W" : "I"
-        }
-
-        switch self {
-        case let .IAN(s: s, c: c): return "IAN\(ss(s)) \(c)"
-        case let .OAN(s: s, c: c): return "OAN\(ss(s)) \(c)"
-        case let .ACN(s: s, c: c): return "ACN\(ss(s)) \(c)"
-        case let .DCN(s: s, c: c): return "DCN\(ss(s)) \(c)"
-        case let .FAN(s: s, c: c): return "FAN\(ss(s)) \(c)"
-        case let .MCLR(c: c):      return "MCLR \(c)"
-        }
+        return self.mnemonic + " " + "\(self.c)"
     }
 
     func execute(on processor: Cyber180PP) -> Bool {
         switch self {
-        case let .IAN(s: s, c: c): IAN(on: processor, s: s, c: c)
-        case let .OAN(s: s, c: c): OAN(on: processor, s: s, c: c)
-        case let .ACN(s: s, c: c): ACN(on: processor, s: s, c: c)
-        case let .DCN(s: s, c: c): DCN(on: processor, s: s, c: c)
-        case let .FAN(s: s, c: c): FAN(on: processor, s: s, c: c)
-        case let .MCLR(c: c):      MCLR (on: processor, c: c)
+        case .IAN(s: _, c: _): IAN(on: processor)
+        case .OAN(s: _, c: _): OAN(on: processor)
+        case .ACN(s: _, c: _): ACN(on: processor)
+        case .DCN(s: _, c: _): DCN(on: processor)
+        case .FAN(s: _, c: _): FAN(on: processor)
+        case .MCLR(c: _):      MCLR(on: processor)
         }
         return true
     }
 
-    internal func IAN(on processor: Cyber180PP, s: Bool, c: UInt8) {
-        // TODO: Implement IAN.
+    internal func IAN(on processor: Cyber180PP) {
     }
 
-    internal func OAN(on processor: Cyber180PP, s: Bool, c: UInt8) {
-        // TODO: Implement OAN.
+    internal func OAN(on processor: Cyber180PP) {
     }
 
-    internal func ACN(on processor: Cyber180PP, s: Bool, c: UInt8) {
-        // TODO: Implement ACN.
+    internal func ACN(on processor: Cyber180PP) {
     }
 
-    internal func DCN(on processor: Cyber180PP, s: Bool, c: UInt8) {
-        // TODO: Implement DCN.
+    internal func DCN(on processor: Cyber180PP) {
     }
 
-    internal func FAN(on processor: Cyber180PP, s: Bool, c: UInt8) {
-        // TODO: Implement FAN.
+    internal func FAN(on processor: Cyber180PP) {
     }
 
-    internal func MCLR(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement MCLR.
+    internal func MCLR(on processor: Cyber180PP) {
     }
 }
 
@@ -782,102 +994,454 @@ extension Cyber180PPInstruction32 {
 }
 
 enum Cyber180PPInstruction32dm: Cyber180PPInstruction32 {
+    case LDC(d: UInt8, m: UInt16)  // 0o0020
+    case LDM(d: UInt8, m: UInt16)  // 0o0050
+    case LDML(d: UInt8, m: UInt16) // 0o1050
+    case STM(d: UInt8, m: UInt16)  // 0o0054
+    case STML(d: UInt8, m: UInt16) // 0o1054
+    case ADC(d: UInt8, m: UInt16)  // 0o0021
+    case ADM(d: UInt8, m: UInt16)  // 0o0051
+    case ADML(d: UInt8, m: UInt16) // 0o1051
+    case SBM(d: UInt8, m: UInt16)  // 0o0052
+    case SBML(d: UInt8, m: UInt16) // 0o1052
+    case LPC(d: UInt8, m: UInt16)  // 0o0022
+    case LPML(d: UInt8, m: UInt16) // 0o1024
+    case LMC(d: UInt8, m: UInt16)  // 0o0023
+    case LMM(d: UInt8, m: UInt16)  // 0o0053
+    case LMML(d: UInt8, m: UInt16) // 0o1053
+    case RAM(d: UInt8, m: UInt16)  // 0o0055
+    case RAML(d: UInt8, m: UInt16) // 0o1055
+    case AOM(d: UInt8, m: UInt16)  // 0o0056
+    case AOML(d: UInt8, m: UInt16) // 0o1056
+    case SOM(d: UInt8, m: UInt16)  // 0o0057
+    case SOML(d: UInt8, m: UInt16) // 0o1057
+    case LJM(d: UInt8, m: UInt16)  // 0o0001
+    case RJM(d: UInt8, m: UInt16)  // 0o0002
+    case LRML(d: UInt8, m: UInt16) // 0o1013
+    case SRML(d: UInt8, m: UInt16) // 0o1016
+    case CRM(d: UInt8, m: UInt16)  // 0o0061
+    case CRML(d: UInt8, m: UInt16) // 0o1061
+    case CWM(d: UInt8, m: UInt16)  // 0o0063
+    case CWML(d: UInt8, m: UInt16) // 0o1063
 
-    static func decode(word: UInt16, at address: UInt16) -> Self? {
-        // TODO: Implement f32dm instruction decoding
-        return nil
+    var addressMode: Cyber180PPAddressMode {
+        switch self {
+        case let .LDC(d: d, m: m):  return .memory(d: d, m: m)
+        case let .LDM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .LDML(d: d, m: m): return .memory(d: d, m: m)
+        case let .STM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .STML(d: d, m: m): return .memory(d: d, m: m)
+        case let .ADC(d: d, m: m):  return .memory(d: d, m: m)
+        case let .ADM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .ADML(d: d, m: m): return .memory(d: d, m: m)
+        case let .SBM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .SBML(d: d, m: m): return .memory(d: d, m: m)
+        case let .LPC(d: d, m: m):  return .memory(d: d, m: m)
+        case let .LPML(d: d, m: m): return .memory(d: d, m: m)
+        case let .LMC(d: d, m: m):  return .memory(d: d, m: m)
+        case let .LMM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .LMML(d: d, m: m): return .memory(d: d, m: m)
+        case let .RAM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .RAML(d: d, m: m): return .memory(d: d, m: m)
+        case let .AOM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .AOML(d: d, m: m): return .memory(d: d, m: m)
+        case let .SOM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .SOML(d: d, m: m): return .memory(d: d, m: m)
+        case let .LJM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .RJM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .LRML(d: d, m: m): return .memory(d: d, m: m)
+        case let .SRML(d: d, m: m): return .memory(d: d, m: m)
+        case let .CRM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .CRML(d: d, m: m): return .memory(d: d, m: m)
+        case let .CWM(d: d, m: m):  return .memory(d: d, m: m)
+        case let .CWML(d: d, m: m): return .memory(d: d, m: m)
+        }
     }
 
-    func disassemble() -> String {
-        // TODO: Implement f32dm instruction disassembly
-        return "f32dm"
+    var mnemonic: String {
+        switch self {
+        case .LDC(d: _, m: _):  return "LDC"
+        case .LDM(d: _, m: _):  return "LDM"
+        case .LDML(d: _, m: _): return "LDML"
+        case .STM(d: _, m: _):  return "STM"
+        case .STML(d: _, m: _): return "STML"
+        case .ADC(d: _, m: _):  return "ADC"
+        case .ADM(d: _, m: _):  return "ADM"
+        case .ADML(d: _, m: _): return "ADML"
+        case .SBM(d: _, m: _):  return "SBM"
+        case .SBML(d: _, m: _): return "SBML"
+        case .LPC(d: _, m: _):  return "LPC"
+        case .LPML(d: _, m: _): return "LPML"
+        case .LMC(d: _, m: _):  return "LMC"
+        case .LMM(d: _, m: _):  return "LMM"
+        case .LMML(d: _, m: _): return "LMML"
+        case .RAM(d: _, m: _):  return "RAM"
+        case .RAML(d: _, m: _): return "RAML"
+        case .AOM(d: _, m: _):  return "AOM"
+        case .AOML(d: _, m: _): return "AOML"
+        case .SOM(d: _, m: _):  return "SOM"
+        case .SOML(d: _, m: _): return "SOML"
+        case .LJM(d: _, m: _):  return "LJM"
+        case .RJM(d: _, m: _):  return "RJM"
+        case .LRML(d: _, m: _): return "LRML"
+        case .SRML(d: _, m: _): return "SRML"
+        case .CRM(d: _, m: _):  return "CRM"
+        case .CRML(d: _, m: _): return "CRML"
+        case .CWM(d: _, m: _):  return "CWM"
+        case .CWML(d: _, m: _): return "CWML"
+        }
     }
 
-    func execute(on processor: Cyber180PP) -> Bool {
-        // TODO: Implement f32dm instruction execution
-        return true
-    }
-}
-
-enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
-    case CHCM(c: UInt8) // 1070X
-    case IAM(c: UInt8) // 0071X
-    case IAPM(c: UInt8) // 1071X
-    case CMCH(c: UInt8) // 1072X
-    case OAM(c: UInt8) // 0073X
-    case OAPM(c: UInt8) // 1073X
-    case FNC(s: Bool, c: UInt8) // 00770
-
-    static func decode(word: UInt16, at address: UInt16) -> Self? {
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
-        let s = (d & 0o40) == 0o40
-        let c = (d & 0o37)
-        // m is retrieved at execution time
+        let m = processor.read(from: address + 1)
 
         switch f {
-        case 0o70: if g == 0 { return .FNC(s: s, c: c) }  else { return .CHCM(c: c) }
-        case 0o71: if g == 0 { return .IAM(c: c) }        else { return .IAPM(c: c) }
-        case 0o72: if g == 0 { return nil }               else { return .CMCH(c: c) }
-        case 0o73: if g == 0 { return .OAM(c: c) }        else { return .OAPM(c: c) }
+        case 0o20: if g == 0 { return .LDC(d: d, m: m) } else { return nil }
+        case 0o50: if g == 0 { return .LDM(d: d, m: m) } else { return .LDML(d: d, m: m) }
+        case 0o54: if g == 0 { return .STM(d: d, m: m) } else { return .STML(d: d, m: m) }
+        case 0o21: if g == 0 { return .ADC(d: d, m: m) } else { return nil }
+        case 0o51: if g == 0 { return .ADM(d: d, m: m) } else { return .ADML(d: d, m: m) }
+        case 0o52: if g == 0 { return .SBM(d: d, m: m) } else { return .SBML(d: d, m: m) }
+        case 0o22: if g == 0 { return .LPC(d: d, m: m) } else { return nil }
+        case 0o24: if g == 0 { return nil }              else { return .LPML(d: d, m: m) }
+        case 0o23: if g == 0 { return .LMC(d: d, m: m) } else { return nil }
+        case 0o53: if g == 0 { return .LMM(d: d, m: m) } else { return .LMML(d: d, m: m) }
+        case 0o55: if g == 0 { return .RAM(d: d, m: m) } else { return .RAML(d: d, m: m) }
+        case 0o56: if g == 0 { return .AOM(d: d, m: m) } else { return .AOML(d: d, m: m) }
+        case 0o57: if g == 0 { return .SOM(d: d, m: m) } else { return .SOML(d: d, m: m) }
+        case 0o01: if g == 0 { return .LJM(d: d, m: m) } else { return nil }
+        case 0o02: if g == 0 { return .RJM(d: d, m: m) } else { return nil }
+        case 0o13: if g == 0 { return nil }              else { return .LRML(d: d, m: m) }
+        case 0o16: if g == 0 { return nil }              else { return .SRML(d: d, m: m) }
+        case 0o61: if g == 0 { return .CRM(d: d, m: m) } else { return .CRML(d: d, m: m) }
+        case 0o63: if g == 0 { return .CWM(d: d, m: m) } else { return .CWML(d: d, m: m) }
         default: return nil
         }
     }
 
-    func disassemble() -> String {
+    func execute(on processor: Cyber180PP) -> Bool {
+        switch self {
+        case .LDC(d: _, m: _):  LDC(on: processor)
+        case .LDM(d: _, m: _):  LDM(on: processor)
+        case .LDML(d: _, m: _): LDML(on: processor)
+        case .STM(d: _, m: _):  STM(on: processor)
+        case .STML(d: _, m: _): STML(on: processor)
+        case .ADC(d: _, m: _):  ADC(on: processor)
+        case .ADM(d: _, m: _):  ADM(on: processor)
+        case .ADML(d: _, m: _): ADML(on: processor)
+        case .SBM(d: _, m: _):  SBM(on: processor)
+        case .SBML(d: _, m: _): SBML(on: processor)
+        case .LPC(d: _, m: _):  LPC(on: processor)
+        case .LPML(d: _, m: _): LPML(on: processor)
+        case .LMC(d: _, m: _):  LMC(on: processor)
+        case .LMM(d: _, m: _):  LMM(on: processor)
+        case .LMML(d: _, m: _): LMML(on: processor)
+        case .RAM(d: _, m: _):  RAM(on: processor)
+        case .RAML(d: _, m: _): RAML(on: processor)
+        case .AOM(d: _, m: _):  AOM(on: processor)
+        case .AOML(d: _, m: _): AOML(on: processor)
+        case .SOM(d: _, m: _):  SOM(on: processor)
+        case .SOML(d: _, m: _): SOML(on: processor)
+        case .LJM(d: _, m: _):  LJM(on: processor)
+        case .RJM(d: _, m: _):  RJM(on: processor)
+        case .LRML(d: _, m: _): LRML(on: processor)
+        case .SRML(d: _, m: _): SRML(on: processor)
+        case .CRM(d: _, m: _):  CRM(on: processor)
+        case .CRML(d: _, m: _): CRML(on: processor)
+        case .CWM(d: _, m: _):  CWM(on: processor)
+        case .CWML(d: _, m: _): CWML(on: processor)
+        }
+        return true
+    }
+
+    internal func LDC(on processor: Cyber180PP) {
+    }
+
+    internal func LDM(on processor: Cyber180PP) {
+    }
+
+    internal func LDML(on processor: Cyber180PP) {
+    }
+
+    internal func STM(on processor: Cyber180PP) {
+    }
+
+    internal func STML(on processor: Cyber180PP) {
+    }
+
+    internal func ADC(on processor: Cyber180PP) {
+    }
+
+    internal func ADM(on processor: Cyber180PP) {
+    }
+
+    internal func ADML(on processor: Cyber180PP) {
+    }
+
+    internal func SBM(on processor: Cyber180PP) {
+    }
+
+    internal func SBML(on processor: Cyber180PP) {
+    }
+
+    internal func LPC(on processor: Cyber180PP) {
+    }
+
+    internal func LPML(on processor: Cyber180PP) {
+    }
+
+    internal func LMC(on processor: Cyber180PP) {
+    }
+
+    internal func LMM(on processor: Cyber180PP) {
+    }
+
+    internal func LMML(on processor: Cyber180PP) {
+    }
+
+    internal func RAM(on processor: Cyber180PP) {
+    }
+
+    internal func RAML(on processor: Cyber180PP) {
+    }
+
+    internal func AOM(on processor: Cyber180PP) {
+    }
+
+    internal func AOML(on processor: Cyber180PP) {
+    }
+
+    internal func SOM(on processor: Cyber180PP) {
+    }
+
+    internal func SOML(on processor: Cyber180PP) {
+    }
+
+    internal func LJM(on processor: Cyber180PP) {
+    }
+
+    internal func RJM(on processor: Cyber180PP) {
+    }
+
+    internal func LRML(on processor: Cyber180PP) {
+    }
+
+    internal func SRML(on processor: Cyber180PP) {
+    }
+
+    internal func CRM(on processor: Cyber180PP) {
+    }
+
+    internal func CRML(on processor: Cyber180PP) {
+    }
+
+    internal func CWM(on processor: Cyber180PP) {
+    }
+
+    internal func CWML(on processor: Cyber180PP) {
+    }
+}
+
+enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
+    case AJM(c: UInt8, m: UInt16) // 00640
+    case SCF(c: UInt8, m: UInt16) // 00641
+    case FSJM(c: UInt8, m: UInt16) // 1064X
+    case IJM(c: UInt8, m: UInt16) // 00650
+    case CCF(c: UInt8, m: UInt16) // 00651
+    case FCJM(c: UInt8, m: UInt16) // 1065X
+    case FJM(c: UInt8, m: UInt16) // 00660
+    case SFM(c: UInt8, m: UInt16) // 00661
+    case EJM(c: UInt8, m: UInt16) // 00670
+    case CFM(c: UInt8, m: UInt16) // 00671
+    case CHCM(c: UInt8, m: UInt16) // 1070X
+    case IAM(c: UInt8, m: UInt16) // 0071X
+    case IAPM(c: UInt8, m: UInt16) // 1071X
+    case CMCH(c: UInt8, m: UInt16) // 1072X
+    case OAM(c: UInt8, m: UInt16) // 0073X
+    case OAPM(c: UInt8, m: UInt16) // 1073X
+    case FNC(s: Bool, c: UInt8, m: UInt16) // 00770
+
+    var addressMode: Cyber180PPAddressMode {
+        func computeD(for s: Bool, using c: UInt8) -> UInt8 {
+            return (((s ? 0 : 1) << 6) | c)
+        }
+
+        switch self {
+        case let .AJM(c: c, m: m):       return .io(d: c, m: m)
+        case let .SCF(c: c, m: m):       return .io(d: c, m: m)
+        case let .FSJM(c: c, m: m):      return .io(d: c, m: m)
+        case let .IJM(c: c, m: m):       return .io(d: c, m: m)
+        case let .CCF(c: c, m: m):       return .io(d: c, m: m)
+        case let .FCJM(c: c, m: m):      return .io(d: c, m: m)
+        case let .FJM(c: c, m: m):       return .io(d: c, m: m)
+        case let .SFM(c: c, m: m):       return .io(d: c, m: m)
+        case let .EJM(c: c, m: m):       return .io(d: c, m: m)
+        case let .CFM(c: c, m: m):       return .io(d: c, m: m)
+        case let .CHCM(c: c, m: m):      return .io(d: c, m: m)
+        case let .IAM(c: c, m: m):       return .io(d: c, m: m)
+        case let .IAPM(c: c, m: m):      return .io(d: c, m: m)
+        case let .CMCH(c: c, m: m):      return .io(d: c, m: m)
+        case let .OAM(c: c, m: m):       return .io(d: c, m: m)
+        case let .OAPM(c: c, m: m):      return .io(d: c, m: m)
+        case let .FNC(s: s, c: c, m: m): return .io(d: computeD(for: s, using: c), m: m)
+        }
+    }
+
+    var mnemonic: String {
         func ss(_ s: Bool) -> String {
             return s ? "W" : "I"
         }
 
         switch self {
-        case let .CHCM(c: c):      return "CHCM \(c)"
-        case let .IAM(c: c):       return "IAM \(c)"
-        case let .IAPM(c: c):      return "IAPM \(c)"
-        case let .CMCH(c: c):      return "CMCH \(c)"
-        case let .OAM(c: c):       return "OAM \(c)"
-        case let .OAPM(c: c):      return "OAPM \(c)"
-        case let .FNC(s: s, c: c): return "FNC\(ss(s)) \(c)"
+        case .AJM(c: _, m: _):           return "AJM"
+        case .SCF(c: _, m: _):           return "SCF"
+        case .FSJM(c: _, m: _):          return "FSJM"
+        case .IJM(c: _, m: _):           return "IJM"
+        case .CCF(c: _, m: _):           return "CCF"
+        case .FCJM(c: _, m: _):          return "FCJM"
+        case .FJM(c: _, m: _):           return "FJM"
+        case .SFM(c: _, m: _):           return "SFM"
+        case .EJM(c: _, m: _):           return "EJM"
+        case .CFM(c: _, m: _):           return "CFM"
+        case .CHCM(c: _, m: _):          return "CHCM"
+        case .IAM(c: _, m: _):           return "IAM"
+        case .IAPM(c: _, m: _):          return "IAPM"
+        case .CMCH(c: _, m: _):          return "CMCH"
+        case .OAM(c: _, m: _):           return "OAM"
+        case .OAPM(c: _, m: _):          return "OAPM"
+        case let .FNC(s: s, c: _, m: _): return "FNC\(ss(s))"
         }
+    }
+
+    var s: Bool {
+        switch self {
+        case let .FNC(s: s, c: _, m: _): return s
+        default:                         return false
+        }
+    }
+
+    var c: UInt8 {
+        switch self {
+        case let .AJM(c: c, m: _):       return c
+        case let .SCF(c: c, m: _):       return c
+        case let .FSJM(c: c, m: _):      return c
+        case let .IJM(c: c, m: _):       return c
+        case let .CCF(c: c, m: _):       return c
+        case let .FCJM(c: c, m: _):      return c
+        case let .FJM(c: c, m: _):       return c
+        case let .SFM(c: c, m: _):       return c
+        case let .EJM(c: c, m: _):       return c
+        case let .CFM(c: c, m: _):       return c
+        case let .CHCM(c: c, m: _):      return c
+        case let .IAM(c: c, m: _):       return c
+        case let .IAPM(c: c, m: _):      return c
+        case let .CMCH(c: c, m: _):      return c
+        case let .OAM(c: c, m: _):       return c
+        case let .OAPM(c: c, m: _):      return c
+        case let .FNC(s: _, c: c, m: _): return c
+        }
+    }
+
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
+        let (g, f, d) = Self.extract(from: word)
+        let s = (d & 0o40) == 0o40
+        let c = (d & 0o37)
+        let m = processor.read(from: address + 1)
+
+        switch f {
+        case 0o64: if g == 0 {
+            if !s            { return .AJM(c: c, m: m) }       else { return .SCF(c: c, m: m) }
+        } else               { return .FSJM(c: c, m: m) }
+        case 0o65: if g == 0 {
+            if !s            { return .IJM(c: c, m: m) }       else { return .CCF(c: c, m: m) }
+        } else               { return .FCJM(c: c, m: m) }
+        case 0o66: if !s     { return .FJM(c: c, m: m) }       else { return .SFM(c: c, m: m) }
+        case 0o67: if !s     { return .EJM(c: c, m: m) }       else { return .CFM(c: c, m: m) }
+        case 0o70: if g == 0 { return .FNC(s: s, c: c, m: m) } else { return .CHCM(c: c, m: m) }
+        case 0o71: if g == 0 { return .IAM(c: c, m: m) }       else { return .IAPM(c: c, m: m) }
+        case 0o72: if g == 0 { return nil }                    else { return .CMCH(c: c, m: m) }
+        case 0o73: if g == 0 { return .OAM(c: c, m: m) }       else { return .OAPM(c: c, m: m) }
+        default: return nil
+        }
+    }
+
+    func disassemble() -> String {
+        return self.mnemonic + " " + "\(self.c)"
     }
 
     func execute(on processor: Cyber180PP) -> Bool {
         switch self {
-        case let .CHCM(c: c):      CHCM(on: processor, c: c)
-        case let .IAM(c: c):       IAM(on: processor, c: c)
-        case let .IAPM(c: c):      IAPM(on: processor, c: c)
-        case let .CMCH(c: c):      CMCH(on: processor, c: c)
-        case let .OAM(c: c):       OAM(on: processor, c: c)
-        case let .OAPM(c: c):      OAPM(on: processor, c: c)
-        case let .FNC(s: s, c: c): FNC(on: processor, s: s, c: c)
+        case .AJM(c: _, m: _):       AJM(on: processor)
+        case .SCF(c: _, m: _):       SCF(on: processor)
+        case .FSJM(c: _, m: _):      FSJM(on: processor)
+        case .IJM(c: _, m: _):       IJM(on: processor)
+        case .CCF(c: _, m: _):       CCF(on: processor)
+        case .FCJM(c: _, m: _):      FCJM(on: processor)
+        case .FJM(c: _, m: _):       FJM(on: processor)
+        case .SFM(c: _, m: _):       SFM(on: processor)
+        case .EJM(c: _, m: _):       EJM(on: processor)
+        case .CFM(c: _, m: _):       CFM(on: processor)
+        case .CHCM(c: _, m: _):      CHCM(on: processor)
+        case .IAM(c: _, m: _):       IAM(on: processor)
+        case .IAPM(c: _, m: _):      IAPM(on: processor)
+        case .CMCH(c: _, m: _):      CMCH(on: processor)
+        case .OAM(c: _, m: _):       OAM(on: processor)
+        case .OAPM(c: _, m: _):      OAPM(on: processor)
+        case .FNC(s: _, c: _, m: _): FNC(on: processor)
         }
 
         return true
     }
 
-    internal func CHCM(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement CHCM.
+    internal func AJM(on processor: Cyber180PP) {
     }
 
-    internal func IAM(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement IAM.
+    internal func SCF(on processor: Cyber180PP) {
     }
 
-    internal func IAPM(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement IAPM.
+    internal func FSJM(on processor: Cyber180PP) {
     }
 
-    internal func CMCH(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement CMCH.
+    internal func IJM(on processor: Cyber180PP) {
     }
 
-    internal func OAM(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement OAM.
+    internal func CCF(on processor: Cyber180PP) {
     }
 
-    internal func OAPM(on processor: Cyber180PP, c: UInt8) {
-        // TODO: Implement OAPM.
+    internal func FCJM(on processor: Cyber180PP) {
     }
 
-    internal func FNC(on processor: Cyber180PP, s: Bool, c: UInt8) {
-        // TODO: Implement FNC.
+    internal func FJM(on processor: Cyber180PP) {
+    }
+
+    internal func SFM(on processor: Cyber180PP) {
+    }
+
+    internal func EJM(on processor: Cyber180PP) {
+    }
+
+    internal func CFM(on processor: Cyber180PP) {
+    }
+
+    internal func CHCM(on processor: Cyber180PP) {
+    }
+
+    internal func IAM(on processor: Cyber180PP) {
+    }
+
+    internal func IAPM(on processor: Cyber180PP) {
+    }
+
+    internal func CMCH(on processor: Cyber180PP) {
+    }
+
+    internal func OAM(on processor: Cyber180PP) {
+    }
+
+    internal func OAPM(on processor: Cyber180PP) {
+    }
+
+    internal func FNC(on processor: Cyber180PP) {
     }
 }
