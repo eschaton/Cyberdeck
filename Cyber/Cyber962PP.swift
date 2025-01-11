@@ -1,6 +1,6 @@
 //
-//  Cyber180PP.swift
-//  Cyberdeck
+//  Cyber962PP.swift
+//  Cyber
 //
 //  Copyright © 2025 Christopher M. Hanson
 //
@@ -18,24 +18,33 @@
 //
 
 
-/// A Cyber 180 Peripheral Processor
+/// A Cyber 962 Peripheral Processor
 ///
-/// The Cyber 180 does not do any I/O on its own; it uses a number of 16-bit Peripheral Processors to perform I/O on its behalf. These have either 4KW or 8KW of their own RAM and access to all of the Cyber 180 system's I/O channels, and can use those I/O channels on its behalf. They also have access to the entirety of the Cyber 180 systems' Central Memory, as a source or target for transfers.
+/// The Cyber 962 does not do any I/O on its own; it uses a number of 16-bit Peripheral Processors to perform I/O on its behalf. These have either 4KW or 8KW of their own RAM and access to all of the Cyber 962 system's I/O channels, and can use those I/O channels on its behalf. They also have access to the entirety of the Cyber 962 systems' Central Memory, as a source or target for transfers.
 ///
 /// - Note: Currently only the I0 processor model is emulated.
-class Cyber180PP {
+class Cyber962PP {
 
     /// Designated Intiailizer
-    init(system: Cyber180) {
-        self.system = system
+    init(inputOutputUnit: Cyber962IOU, index: Int) {
+        self.inputOutputUnit = inputOutputUnit
+        self.index = index
     }
 
     // MARK: - System Interconnection
+    
+    /// The IOU this Peripheral Processor is a part of.
+    var inputOutputUnit: Cyber962IOU
+    
+    /// The index of this Peripheral Procesor within the IOU.
+    var index: Int
 
     /// The system this Central Processor is a part of.
-    var system: Cyber180
+    var system: Cyber962 {
+        return inputOutputUnit.system
+    }
 
-    /// The different models of Peripheral Processor used in Cyber 180 systems.
+    /// The different models of Peripheral Processor used in Cyber 962 systems.
     enum Model {
         case I0
         case I1
@@ -95,7 +104,7 @@ class Cyber180PP {
     // MARK: - Instruction Decoding & Execution
 
     /// Decode all possible instructions.
-    func decode(at address: UInt16) -> (any Cyber180PPInstruction)? {
+    func decode(at address: UInt16) -> (any Cyber962PPInstruction)? {
         let instructionWord: UInt16 = self.read(from: address)
 
         // Check whether an instruction is prima facie invalid
@@ -103,10 +112,10 @@ class Cyber180PP {
             return nil
         }
 
-        if let f16di  = Cyber180PPInstruction16d.decode(word: instructionWord, at: address, on: self)    { return f16di }
-        if let f16sci = Cyber180PPInstruction16sc.decode(word: instructionWord, at: address, on: self)   { return f16sci }
-        if let f32dmi = Cyber180PPInstruction32dm.decode(word: instructionWord, at: address, on: self)   { return f32dmi }
-        if let f32scmi = Cyber180PPInstruction32scm.decode(word: instructionWord, at: address, on: self) { return f32scmi }
+        if let f16di  = Cyber962PPInstruction16d.decode(word: instructionWord, at: address, on: self)    { return f16di }
+        if let f16sci = Cyber962PPInstruction16sc.decode(word: instructionWord, at: address, on: self)   { return f16sci }
+        if let f32dmi = Cyber962PPInstruction32dm.decode(word: instructionWord, at: address, on: self)   { return f32dmi }
+        if let f32scmi = Cyber962PPInstruction32scm.decode(word: instructionWord, at: address, on: self) { return f32scmi }
 
         return nil
     }
@@ -129,8 +138,8 @@ class Cyber180PP {
 
 // MARK: - Address Modes
 
-/// The Cyber 180 Peripheral Processor has a small number of fairly orthogonal addressing modes.
-enum Cyber180PPAddressMode {
+/// The Cyber 962 Peripheral Processor has a small number of fairly orthogonal addressing modes.
+enum Cyber962PPAddressMode {
 
     /// "No-Address" mode is what most other processors refer to as "immediate" mode, and treats `d` as a 6-bit quantity.
     case noAddress(d: UInt8)
@@ -205,7 +214,7 @@ enum Cyber180PPAddressMode {
     }
 
     /// Compute the effective address represented by this address mode on the given processor, or `nil` if one canot be computed (say for ``.noAddress`` and ``.constant(d:m:)`` modes.
-    func effectiveAddress(on processor: Cyber180PP) -> UInt16? {
+    func effectiveAddress(on processor: Cyber962PP) -> UInt16? {
         switch self {
         case .noAddress(d: _), .constant(d: _, m: _):
             // These modes do not involve an address computation.
@@ -230,7 +239,7 @@ enum Cyber180PPAddressMode {
 
 // MARK: - Instructions
 
-protocol Cyber180PPInstruction {
+protocol Cyber962PPInstruction {
 
     /// The adjustment to apply to `P` to get the following instruction.
     var stride: UInt16 { get }
@@ -238,7 +247,7 @@ protocol Cyber180PPInstruction {
     /// The addressing mode for this decoded instruction.
     ///
     /// While an instruction always has one of these, some specific instruction implementations may ignore it and use instruction fields directly.
-    var addressMode: Cyber180PPAddressMode { get }
+    var addressMode: Cyber962PPAddressMode { get }
 
     /// The mnemonic representing this instruction in disassembly.
     ///
@@ -250,7 +259,7 @@ protocol Cyber180PPInstruction {
     /// Tries to decode an instruction of this type from the given word, returning `nil` if one isn't present.
     ///
     /// Since fully decoding an instruction may require an additional memory access, the processor must also be passed.
-    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self?
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber962PP) -> Self?
 
     /// Disassemble the instruction.
     func disassemble() -> String
@@ -259,10 +268,10 @@ protocol Cyber180PPInstruction {
     ///
     /// Performs the operation corresponding to the instruction and returns whether to automatically update `P`.
     /// (Branch/jump instructions can update `P` themselves.)
-    func execute(on processor: Cyber180PP) -> Bool
+    func execute(on processor: Cyber962PP) -> Bool
 }
 
-extension Cyber180PPInstruction {
+extension Cyber962PPInstruction {
 
     /// Extract the fields from an instruction word. Since `c` is the high bit of `d` we don't pass it separately.
     static func extract(from word: UInt16) -> (g: UInt8, f: UInt8, d: UInt8) {
@@ -283,16 +292,16 @@ extension Cyber180PPInstruction {
     }
 }
 
-/// A 16-bit Cyber 180 Peripheral Processor instruction.
-protocol Cyber180PPInstruction16: Cyber180PPInstruction {
+/// A 16-bit Cyber 962 Peripheral Processor instruction.
+protocol Cyber962PPInstruction16: Cyber962PPInstruction {
 }
 
-extension Cyber180PPInstruction16 {
+extension Cyber962PPInstruction16 {
     var stride: UInt16 { return 1 }
 }
 
-/// A 16-bit Cyber 180 Peripheral Processor `d`-format instruction.
-enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
+/// A 16-bit Cyber 962 Peripheral Processor `d`-format instruction.
+enum Cyber962PPInstruction16d: Cyber962PPInstruction16 {
     case LDN(d: UInt8)
     case LCN(d: UInt8)
     case LDD(d: UInt8)
@@ -361,7 +370,7 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
     case MXN
     case MAN
 
-    var addressMode: Cyber180PPAddressMode {
+    var addressMode: Cyber962PPAddressMode {
         switch self {
         case let .LDN(d: d): return .noAddress(d: d)
         case let .LCN(d: d): return .noAddress(d: d)
@@ -505,7 +514,7 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
         }
     }
 
-    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber962PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
 
         switch f {
@@ -572,7 +581,7 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
         }
     }
 
-    func execute(on processor: Cyber180PP) -> Bool {
+    func execute(on processor: Cyber962PP) -> Bool {
         switch self {
         case .LDN(d: _): LDN(on: processor)
         case .LCN(d: _): LCN(on: processor)
@@ -645,7 +654,7 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
         return true
     }
 
-    internal func load(on processor: Cyber180PP, long: Bool = false) {
+    internal func load(on processor: Cyber962PP, long: Bool = false) {
         let mode = self.addressMode
         let value: UInt32
         if let address = mode.effectiveAddress(on: processor) {
@@ -657,13 +666,13 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
         processor.regA = value
     }
 
-    internal func loadComplement(on processor: Cyber180PP) {
+    internal func loadComplement(on processor: Cyber962PP) {
         let dc: UInt32 = UInt32(~self.addressMode.d & 0x3F)
         let newA: UInt32 = 0x0003_FFC0 | dc
         processor.regA = newA
     }
 
-    internal func store(on processor: Cyber180PP, long: Bool = false) {
+    internal func store(on processor: Cyber962PP, long: Bool = false) {
         let mode = self.addressMode
         let mask: UInt32 = long ? 0x0000_FFFF : 0x0000_0FFF
         let value: UInt16 = UInt16(processor.regA & mask)
@@ -674,219 +683,219 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
         }
     }
 
-    internal func LDN(on processor: Cyber180PP) {
+    internal func LDN(on processor: Cyber962PP) {
         self.load(on: processor)
     }
 
-    internal func LCN(on processor: Cyber180PP) {
+    internal func LCN(on processor: Cyber962PP) {
         self.loadComplement(on: processor)
     }
 
-    internal func LDD(on processor: Cyber180PP) {
+    internal func LDD(on processor: Cyber962PP) {
         self.load(on: processor)
     }
 
-    internal func LDDL(on processor: Cyber180PP) {
+    internal func LDDL(on processor: Cyber962PP) {
         self.load(on: processor, long: true)
     }
 
-    internal func STD(on processor: Cyber180PP) {
+    internal func STD(on processor: Cyber962PP) {
         self.store(on: processor)
     }
 
-    internal func STDL(on processor: Cyber180PP) {
+    internal func STDL(on processor: Cyber962PP) {
         self.store(on: processor, long: true)
     }
 
-    internal func LDI(on processor: Cyber180PP) {
+    internal func LDI(on processor: Cyber962PP) {
         self.load(on: processor)
     }
 
-    internal func LDIL(on processor: Cyber180PP) {
+    internal func LDIL(on processor: Cyber962PP) {
         self.load(on: processor, long: true)
     }
 
-    internal func STI(on processor: Cyber180PP) {
+    internal func STI(on processor: Cyber962PP) {
         self.store(on: processor)
     }
 
-    internal func STIL(on processor: Cyber180PP) {
+    internal func STIL(on processor: Cyber962PP) {
         self.store(on: processor, long: true)
     }
 
-    internal func ADN(on processor: Cyber180PP) {
+    internal func ADN(on processor: Cyber962PP) {
     }
 
-    internal func SBN(on processor: Cyber180PP) {
+    internal func SBN(on processor: Cyber962PP) {
     }
 
-    internal func ADD(on processor: Cyber180PP) {
+    internal func ADD(on processor: Cyber962PP) {
     }
 
-    internal func ADDL(on processor: Cyber180PP) {
+    internal func ADDL(on processor: Cyber962PP) {
     }
 
-    internal func SBD(on processor: Cyber180PP) {
+    internal func SBD(on processor: Cyber962PP) {
     }
 
-    internal func SBDL(on processor: Cyber180PP) {
+    internal func SBDL(on processor: Cyber962PP) {
     }
 
-    internal func ADI(on processor: Cyber180PP) {
+    internal func ADI(on processor: Cyber962PP) {
     }
 
-    internal func ADIL(on processor: Cyber180PP) {
+    internal func ADIL(on processor: Cyber962PP) {
     }
 
-    internal func SBI(on processor: Cyber180PP) {
+    internal func SBI(on processor: Cyber962PP) {
     }
 
-    internal func SBIL(on processor: Cyber180PP) {
+    internal func SBIL(on processor: Cyber962PP) {
     }
 
-    internal func SHN(on processor: Cyber180PP) {
+    internal func SHN(on processor: Cyber962PP) {
     }
 
-    internal func SHDL(on processor: Cyber180PP) {
+    internal func SHDL(on processor: Cyber962PP) {
     }
 
-    internal func LMN(on processor: Cyber180PP) {
+    internal func LMN(on processor: Cyber962PP) {
     }
 
-    internal func LPN(on processor: Cyber180PP) {
+    internal func LPN(on processor: Cyber962PP) {
     }
 
-    internal func SCN(on processor: Cyber180PP) {
+    internal func SCN(on processor: Cyber962PP) {
     }
 
-    internal func LPDL(on processor: Cyber180PP) {
+    internal func LPDL(on processor: Cyber962PP) {
     }
 
-    internal func LPIL(on processor: Cyber180PP) {
+    internal func LPIL(on processor: Cyber962PP) {
     }
 
-    internal func LMD(on processor: Cyber180PP) {
+    internal func LMD(on processor: Cyber962PP) {
     }
 
-    internal func LMDL(on processor: Cyber180PP) {
+    internal func LMDL(on processor: Cyber962PP) {
     }
 
-    internal func LMI(on processor: Cyber180PP) {
+    internal func LMI(on processor: Cyber962PP) {
     }
 
-    internal func LMIL(on processor: Cyber180PP) {
+    internal func LMIL(on processor: Cyber962PP) {
     }
 
-    internal func RAD(on processor: Cyber180PP) {
+    internal func RAD(on processor: Cyber962PP) {
     }
 
-    internal func RADL(on processor: Cyber180PP) {
+    internal func RADL(on processor: Cyber962PP) {
     }
 
-    internal func AOD(on processor: Cyber180PP) {
+    internal func AOD(on processor: Cyber962PP) {
     }
 
-    internal func AODL(on processor: Cyber180PP) {
+    internal func AODL(on processor: Cyber962PP) {
     }
 
-    internal func SOD(on processor: Cyber180PP) {
+    internal func SOD(on processor: Cyber962PP) {
     }
 
-    internal func SODL(on processor: Cyber180PP) {
+    internal func SODL(on processor: Cyber962PP) {
     }
 
-    internal func RAI(on processor: Cyber180PP) {
+    internal func RAI(on processor: Cyber962PP) {
     }
 
-    internal func RAIL(on processor: Cyber180PP) {
+    internal func RAIL(on processor: Cyber962PP) {
     }
 
-    internal func AOI(on processor: Cyber180PP) {
+    internal func AOI(on processor: Cyber962PP) {
     }
 
-    internal func AOIL(on processor: Cyber180PP) {
+    internal func AOIL(on processor: Cyber962PP) {
     }
 
-    internal func SOI(on processor: Cyber180PP) {
+    internal func SOI(on processor: Cyber962PP) {
     }
 
-    internal func SOIL(on processor: Cyber180PP) {
+    internal func SOIL(on processor: Cyber962PP) {
     }
 
-    internal func UNJ(on processor: Cyber180PP) {
+    internal func UNJ(on processor: Cyber962PP) {
     }
 
-    internal func ZJN(on processor: Cyber180PP) {
+    internal func ZJN(on processor: Cyber962PP) {
     }
 
-    internal func NJN(on processor: Cyber180PP) {
+    internal func NJN(on processor: Cyber962PP) {
     }
 
-    internal func PJN(on processor: Cyber180PP) {
+    internal func PJN(on processor: Cyber962PP) {
     }
 
-    internal func MJN(on processor: Cyber180PP) {
+    internal func MJN(on processor: Cyber962PP) {
     }
 
-    internal func LRD(on processor: Cyber180PP) {
+    internal func LRD(on processor: Cyber962PP) {
     }
 
-    internal func SRD(on processor: Cyber180PP) {
+    internal func SRD(on processor: Cyber962PP) {
     }
 
-    internal func LRDL(on processor: Cyber180PP) {
+    internal func LRDL(on processor: Cyber962PP) {
     }
 
-    internal func SRDL(on processor: Cyber180PP) {
+    internal func SRDL(on processor: Cyber962PP) {
     }
 
-    internal func LRIL(on processor: Cyber180PP) {
+    internal func LRIL(on processor: Cyber962PP) {
     }
 
-    internal func SRIL(on processor: Cyber180PP) {
+    internal func SRIL(on processor: Cyber962PP) {
     }
 
-    internal func CRD(on processor: Cyber180PP) {
+    internal func CRD(on processor: Cyber962PP) {
     }
 
-    internal func CRDL(on processor: Cyber180PP) {
+    internal func CRDL(on processor: Cyber962PP) {
     }
 
-    internal func CWD(on processor: Cyber180PP) {
+    internal func CWD(on processor: Cyber962PP) {
     }
 
-    internal func CWDL(on processor: Cyber180PP) {
+    internal func CWDL(on processor: Cyber962PP) {
     }
 
-    internal func RDSL(on processor: Cyber180PP) {
+    internal func RDSL(on processor: Cyber962PP) {
     }
 
-    internal func RDCL(on processor: Cyber180PP) {
+    internal func RDCL(on processor: Cyber962PP) {
     }
 
-    internal func PSN(on processor: Cyber180PP) {
+    internal func PSN(on processor: Cyber962PP) {
     }
 
-    internal func WAIT(on processor: Cyber180PP) {
+    internal func WAIT(on processor: Cyber962PP) {
     }
 
-    internal func KEYP(on processor: Cyber180PP) {
+    internal func KEYP(on processor: Cyber962PP) {
     }
 
-    internal func INPN(on processor: Cyber180PP) {
+    internal func INPN(on processor: Cyber962PP) {
     }
 
-    internal func EXN(on processor: Cyber180PP) {
+    internal func EXN(on processor: Cyber962PP) {
     }
 
-    internal func MXN(on processor: Cyber180PP) {
+    internal func MXN(on processor: Cyber962PP) {
     }
 
-    internal func MAN(on processor: Cyber180PP) {
+    internal func MAN(on processor: Cyber962PP) {
     }
 }
 
-/// A 16-bit Cyber 180 Peripheral Processor `sc`-format instruction.
+/// A 16-bit Cyber 962 Peripheral Processor `sc`-format instruction.
 ///
 /// A 16sc instruction has the format:
 ///
@@ -895,7 +904,7 @@ enum Cyber180PPInstruction16d: Cyber180PPInstruction16 {
 ///     |  g |  0    0    0 |              f              |  s |           c            |
 ///
 /// For instructions that support it, the `s` bit means "wait until active" when set and "skip if inactive" when clear.
-enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
+enum Cyber962PPInstruction16sc: Cyber962PPInstruction16 {
     case IAN(s: Bool, c: UInt8) // 0070sc
     case OAN(s: Bool, c: UInt8) // 0072sc
     case ACN(s: Bool, c: UInt8) // 0074sc
@@ -903,7 +912,7 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
     case FAN(s: Bool, c: UInt8) // 0076sc
     case MCLR(c: UInt8) // 1074xc
 
-    var addressMode: Cyber180PPAddressMode {
+    var addressMode: Cyber962PPAddressMode {
         switch self {
         case let .IAN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
         case let .OAN(s: s, c: c): return .noAddress(d: ((s ? 0 : 1) << 6) | c)
@@ -940,7 +949,7 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
         }
     }
 
-    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber962PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
         let s = (d & 0o40) == 0o40
         let c = (d & 0o37)
@@ -965,7 +974,7 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
         return self.mnemonic + " " + "\(self.c)"
     }
 
-    func execute(on processor: Cyber180PP) -> Bool {
+    func execute(on processor: Cyber962PP) -> Bool {
         switch self {
         case .IAN(s: _, c: _): IAN(on: processor)
         case .OAN(s: _, c: _): OAN(on: processor)
@@ -978,39 +987,39 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
     }
 
     /// Input to `A` from channel `c` when or if active, depending on whether `s` is `0` or `1`.
-    internal func IAN(on processor: Cyber180PP) {
+    internal func IAN(on processor: Cyber962PP) {
         let mode = self.addressMode
-        let channel = processor.system.channels[Int(mode.c)]
+        let channel = processor.inputOutputUnit.channels[Int(mode.c)]
         let values = channel.input(count: 1, skipIfNotActiveAndFull: mode.s)
         processor.regA = UInt32(values[0])
     }
 
     /// Output from `A` to channel `c` when or if active, depending on whether `s` is `0` or `1`.
-    internal func OAN(on processor: Cyber180PP) {
+    internal func OAN(on processor: Cyber962PP) {
         let mode = self.addressMode
-        let channel = processor.system.channels[Int(mode.c)]
+        let channel = processor.inputOutputUnit.channels[Int(mode.c)]
         let lowA = UInt16(processor.regA)
         channel.output(words: [lowA], skipIfNotActive: mode.s)
     }
 
     /// Activate channel `c` when inactive or unconditionally, depending on `s`.
-    internal func ACN(on processor: Cyber180PP) {
+    internal func ACN(on processor: Cyber962PP) {
         let mode = self.addressMode
-        let channel = processor.system.channels[Int(mode.c)]
+        let channel = processor.inputOutputUnit.channels[Int(mode.c)]
         let waitForInactive = !mode.s
         channel.activate(onceInactive: waitForInactive)
     }
 
-    internal func DCN(on processor: Cyber180PP) {
+    internal func DCN(on processor: Cyber962PP) {
         let mode = self.addressMode
-        let channel = processor.system.channels[Int(mode.c)]
+        let channel = processor.inputOutputUnit.channels[Int(mode.c)]
         let waitForActive = !mode.s
         channel.deactivate(onceActive: waitForActive)
     }
 
-    internal func FAN(on processor: Cyber180PP) {
+    internal func FAN(on processor: Cyber962PP) {
         let mode = self.addressMode
-        let channel = processor.system.channels[Int(mode.c)]
+        let channel = processor.inputOutputUnit.channels[Int(mode.c)]
         let skipIfActive = mode.s
         let lowA: UInt16 = UInt16(processor.regA) // we'll only use the lower 12 or 16 bits
         channel.function(lowA, skipIfActive: skipIfActive)
@@ -1019,25 +1028,25 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
     /// Master Clear I/O channel `c` marking it active and empty.
     ///
     /// - Note: Only supported on model I0.
-    internal func MCLR(on processor: Cyber180PP) {
+    internal func MCLR(on processor: Cyber962PP) {
         guard processor.model == .I0 else {
             fatalError("Only supported on I0")
         }
 
         let c = self.addressMode.c
-        let channel = processor.system.channels[Int(c)]
+        let channel = processor.inputOutputUnit.channels[Int(c)]
         channel.masterClear()
     }
 }
 
-protocol Cyber180PPInstruction32: Cyber180PPInstruction {
+protocol Cyber962PPInstruction32: Cyber962PPInstruction {
 }
 
-extension Cyber180PPInstruction32 {
+extension Cyber962PPInstruction32 {
     var stride: UInt16 { return 2 }
 }
 
-enum Cyber180PPInstruction32dm: Cyber180PPInstruction32 {
+enum Cyber962PPInstruction32dm: Cyber962PPInstruction32 {
     case LDC(d: UInt8, m: UInt16)  // 0o0020
     case LDM(d: UInt8, m: UInt16)  // 0o0050
     case LDML(d: UInt8, m: UInt16) // 0o1050
@@ -1068,7 +1077,7 @@ enum Cyber180PPInstruction32dm: Cyber180PPInstruction32 {
     case CWM(d: UInt8, m: UInt16)  // 0o0063
     case CWML(d: UInt8, m: UInt16) // 0o1063
 
-    var addressMode: Cyber180PPAddressMode {
+    var addressMode: Cyber962PPAddressMode {
         switch self {
         case let .LDC(d: d, m: m):  return .memory(d: d, m: m)
         case let .LDM(d: d, m: m):  return .memory(d: d, m: m)
@@ -1136,7 +1145,7 @@ enum Cyber180PPInstruction32dm: Cyber180PPInstruction32 {
         }
     }
 
-    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber962PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
         let m = processor.read(from: address + 1)
 
@@ -1164,7 +1173,7 @@ enum Cyber180PPInstruction32dm: Cyber180PPInstruction32 {
         }
     }
 
-    func execute(on processor: Cyber180PP) -> Bool {
+    func execute(on processor: Cyber962PP) -> Bool {
         switch self {
         case .LDC(d: _, m: _):  LDC(on: processor)
         case .LDM(d: _, m: _):  LDM(on: processor)
@@ -1199,95 +1208,95 @@ enum Cyber180PPInstruction32dm: Cyber180PPInstruction32 {
         return true
     }
 
-    internal func LDC(on processor: Cyber180PP) {
+    internal func LDC(on processor: Cyber962PP) {
     }
 
-    internal func LDM(on processor: Cyber180PP) {
+    internal func LDM(on processor: Cyber962PP) {
     }
 
-    internal func LDML(on processor: Cyber180PP) {
+    internal func LDML(on processor: Cyber962PP) {
     }
 
-    internal func STM(on processor: Cyber180PP) {
+    internal func STM(on processor: Cyber962PP) {
     }
 
-    internal func STML(on processor: Cyber180PP) {
+    internal func STML(on processor: Cyber962PP) {
     }
 
-    internal func ADC(on processor: Cyber180PP) {
+    internal func ADC(on processor: Cyber962PP) {
     }
 
-    internal func ADM(on processor: Cyber180PP) {
+    internal func ADM(on processor: Cyber962PP) {
     }
 
-    internal func ADML(on processor: Cyber180PP) {
+    internal func ADML(on processor: Cyber962PP) {
     }
 
-    internal func SBM(on processor: Cyber180PP) {
+    internal func SBM(on processor: Cyber962PP) {
     }
 
-    internal func SBML(on processor: Cyber180PP) {
+    internal func SBML(on processor: Cyber962PP) {
     }
 
-    internal func LPC(on processor: Cyber180PP) {
+    internal func LPC(on processor: Cyber962PP) {
     }
 
-    internal func LPML(on processor: Cyber180PP) {
+    internal func LPML(on processor: Cyber962PP) {
     }
 
-    internal func LMC(on processor: Cyber180PP) {
+    internal func LMC(on processor: Cyber962PP) {
     }
 
-    internal func LMM(on processor: Cyber180PP) {
+    internal func LMM(on processor: Cyber962PP) {
     }
 
-    internal func LMML(on processor: Cyber180PP) {
+    internal func LMML(on processor: Cyber962PP) {
     }
 
-    internal func RAM(on processor: Cyber180PP) {
+    internal func RAM(on processor: Cyber962PP) {
     }
 
-    internal func RAML(on processor: Cyber180PP) {
+    internal func RAML(on processor: Cyber962PP) {
     }
 
-    internal func AOM(on processor: Cyber180PP) {
+    internal func AOM(on processor: Cyber962PP) {
     }
 
-    internal func AOML(on processor: Cyber180PP) {
+    internal func AOML(on processor: Cyber962PP) {
     }
 
-    internal func SOM(on processor: Cyber180PP) {
+    internal func SOM(on processor: Cyber962PP) {
     }
 
-    internal func SOML(on processor: Cyber180PP) {
+    internal func SOML(on processor: Cyber962PP) {
     }
 
-    internal func LJM(on processor: Cyber180PP) {
+    internal func LJM(on processor: Cyber962PP) {
     }
 
-    internal func RJM(on processor: Cyber180PP) {
+    internal func RJM(on processor: Cyber962PP) {
     }
 
-    internal func LRML(on processor: Cyber180PP) {
+    internal func LRML(on processor: Cyber962PP) {
     }
 
-    internal func SRML(on processor: Cyber180PP) {
+    internal func SRML(on processor: Cyber962PP) {
     }
 
-    internal func CRM(on processor: Cyber180PP) {
+    internal func CRM(on processor: Cyber962PP) {
     }
 
-    internal func CRML(on processor: Cyber180PP) {
+    internal func CRML(on processor: Cyber962PP) {
     }
 
-    internal func CWM(on processor: Cyber180PP) {
+    internal func CWM(on processor: Cyber962PP) {
     }
 
-    internal func CWML(on processor: Cyber180PP) {
+    internal func CWML(on processor: Cyber962PP) {
     }
 }
 
-enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
+enum Cyber962PPInstruction32scm: Cyber962PPInstruction32 {
     case AJM(c: UInt8, m: UInt16) // 00640
     case SCF(c: UInt8, m: UInt16) // 00641
     case FSJM(c: UInt8, m: UInt16) // 1064X
@@ -1306,7 +1315,7 @@ enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
     case OAPM(c: UInt8, m: UInt16) // 1073X
     case FNC(s: Bool, c: UInt8, m: UInt16) // 00770
 
-    var addressMode: Cyber180PPAddressMode {
+    var addressMode: Cyber962PPAddressMode {
         func computeD(for s: Bool, using c: UInt8) -> UInt8 {
             return (((s ? 0 : 1) << 6) | c)
         }
@@ -1387,7 +1396,7 @@ enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
         }
     }
 
-    static func decode(word: UInt16, at address: UInt16, on processor: Cyber180PP) -> Self? {
+    static func decode(word: UInt16, at address: UInt16, on processor: Cyber962PP) -> Self? {
         let (g, f, d) = Self.extract(from: word)
         let s = (d & 0o40) == 0o40
         let c = (d & 0o37)
@@ -1414,7 +1423,7 @@ enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
         return self.mnemonic + " " + "\(self.c)"
     }
 
-    func execute(on processor: Cyber180PP) -> Bool {
+    func execute(on processor: Cyber962PP) -> Bool {
         switch self {
         case .AJM(c: _, m: _):       AJM(on: processor)
         case .SCF(c: _, m: _):       SCF(on: processor)
@@ -1438,54 +1447,54 @@ enum Cyber180PPInstruction32scm: Cyber180PPInstruction32 {
         return true
     }
 
-    internal func AJM(on processor: Cyber180PP) {
+    internal func AJM(on processor: Cyber962PP) {
     }
 
-    internal func SCF(on processor: Cyber180PP) {
+    internal func SCF(on processor: Cyber962PP) {
     }
 
-    internal func FSJM(on processor: Cyber180PP) {
+    internal func FSJM(on processor: Cyber962PP) {
     }
 
-    internal func IJM(on processor: Cyber180PP) {
+    internal func IJM(on processor: Cyber962PP) {
     }
 
-    internal func CCF(on processor: Cyber180PP) {
+    internal func CCF(on processor: Cyber962PP) {
     }
 
-    internal func FCJM(on processor: Cyber180PP) {
+    internal func FCJM(on processor: Cyber962PP) {
     }
 
-    internal func FJM(on processor: Cyber180PP) {
+    internal func FJM(on processor: Cyber962PP) {
     }
 
-    internal func SFM(on processor: Cyber180PP) {
+    internal func SFM(on processor: Cyber962PP) {
     }
 
-    internal func EJM(on processor: Cyber180PP) {
+    internal func EJM(on processor: Cyber962PP) {
     }
 
-    internal func CFM(on processor: Cyber180PP) {
+    internal func CFM(on processor: Cyber962PP) {
     }
 
-    internal func CHCM(on processor: Cyber180PP) {
+    internal func CHCM(on processor: Cyber962PP) {
     }
 
-    internal func IAM(on processor: Cyber180PP) {
+    internal func IAM(on processor: Cyber962PP) {
     }
 
-    internal func IAPM(on processor: Cyber180PP) {
+    internal func IAPM(on processor: Cyber962PP) {
     }
 
-    internal func CMCH(on processor: Cyber180PP) {
+    internal func CMCH(on processor: Cyber962PP) {
     }
 
-    internal func OAM(on processor: Cyber180PP) {
+    internal func OAM(on processor: Cyber962PP) {
     }
 
-    internal func OAPM(on processor: Cyber180PP) {
+    internal func OAPM(on processor: Cyber962PP) {
     }
 
-    internal func FNC(on processor: Cyber180PP) {
+    internal func FNC(on processor: Cyber962PP) {
     }
 }

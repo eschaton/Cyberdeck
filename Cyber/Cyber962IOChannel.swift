@@ -1,6 +1,6 @@
 //
-//  Cyber180Channel.swift
-//  Cyberdeck
+//  Cyber962Channel.swift
+//  Cyber
 //
 //  Copyright © 2025 Christopher M. Hanson
 //
@@ -18,24 +18,49 @@
 //
 
 
-/// An I/O Channel on the Cyber 180.
-open class Cyber180IOChannel {
-
-    /// Designated Initializer
-    init(system: Cyber180, width: Width = .channel12) {
-        self.system = system
-        self.width = width
+/// An I/O Channel on the Cyber 962.
+open class Cyber962IOChannel {
+    
+    enum WellKnownChannel: UInt8 {
+        case internal0 = 0o00
+        case internal1 = 0o01
+        case internal12 = 0o12
+        case internal13 = 0o13
+        case realTimeClock = 0o14
+        case twoPortMulitplexer = 0o15
+        case maintenance = 0o17
+        case scsi0 = 0o32
+        case scsi1 = 0o33
     }
+    
 
     // MARK: - System Interconnection
+    
+    /// The IOU this channel is a part of.
+    let inputOutputUnit: Cyber962IOU
+    
+    /// The index of this channel within its IOU.
+    let index: Int
 
     /// The system this Central Processor is a part of.
-    var system: Cyber180
+    var system: Cyber962 {
+        return self.inputOutputUnit.system
+    }
+    
+
+    // MARK: - Initialization
+    
+    /// Designated Initializer
+    init(inputOutputUnit: Cyber962IOU, index: Int, width: Width = .channel16) {
+        self.inputOutputUnit = inputOutputUnit
+        self.index = index
+        self.width = width
+    }
 
 
     // MARK: - I/O State
 
-    /// The i/O channel widths supported by the Cyber 180.
+    /// The i/O channel widths supported by the Cyber 962.
     enum Width: Int {
         /// The channel is a 12-bit channel.
         case channel12 = 12

@@ -1,4 +1,4 @@
 # Cyberdeck
 
-An emulation of the Control Data Cyber 960 series mainframe/supercomputer.
+An emulation of the Control Data Cyber 962 series mainframe/supercomputer.
 

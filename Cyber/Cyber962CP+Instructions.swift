@@ -1,6 +1,6 @@
 //
-//  Cyber180CP+Instructions.swift
-//  Cyberdeck
+//  Cyber962CP+Instructions.swift
+//  Cyber
 //
 //  Copyright © 2025 Christopher M. Hanson
 //
@@ -18,7 +18,7 @@
 //
 
 
-extension Cyber180CP {
+extension Cyber962CP {
 
 
     func executionLoop() {
@@ -34,32 +34,32 @@ extension Cyber180CP {
         }
     }
 
-    func decode(at address: UInt64) -> (any Cyber180CPInstruction)? {
+    func decode(at address: UInt64) -> (any Cyber962CPInstruction)? {
         let opcode: UInt8 = self.read(virtualAddress: address)
         switch opcode {
         case 0x00..<0x40,
             0x70..<0x80:
             // jk instructions are 16-bit
             let instruction: UInt16 = self.read(virtualAddress: address)
-            return Cyber180CPInstruction_jk.decode(opcode: opcode, word: instruction)
+            return Cyber962CPInstruction_jk.decode(opcode: opcode, word: instruction)
 
         case 0x40..<0x70,
             0xA0..<0xB0,
             0xE0...0xFF:
             // jkiD instructions are 32-bit
             let instruction: UInt32 = self.read(virtualAddress: address)
-            return Cyber180CPInstruction_jkiD.decode(opcode: opcode, word: instruction)
+            return Cyber962CPInstruction_jkiD.decode(opcode: opcode, word: instruction)
 
         case 0x80..<0xA0,
             0xB0..<0xC0:
             // jkQ instructions are 32-bit
             let instruction: UInt32 = self.read(virtualAddress: address)
-            return Cyber180CPInstruction_jkQ.decode(opcode: opcode, word: instruction)
+            return Cyber962CPInstruction_jkQ.decode(opcode: opcode, word: instruction)
 
         case 0xC0..<0xE0:
             // SjkiD instructions are 32-bit
             let instruction: UInt32 = self.read(virtualAddress: address)
-            return Cyber180CPInstruction_SjkiD.decode(opcode: opcode, word: instruction)
+            return Cyber962CPInstruction_SjkiD.decode(opcode: opcode, word: instruction)
 
         default:
             fatalError("This should be impossible to reach.")
@@ -71,9 +71,9 @@ extension Cyber180CP {
 
 // MARK: - Instruction Formats
 
-/// The protocol to which all Cyber 180 instructions conform, parameterized on the type used to represent the instruction word.
+/// The protocol to which all Cyber 962 instructions conform, parameterized on the type used to represent the instruction word.
 ///
-/// Instructions on the Cyber 180 have one of four possible layouts, which are represented by subprotocols:
+/// Instructions on the Cyber 962 have one of four possible layouts, which are represented by subprotocols:
 ///
 /// ```
 ///      jkiD | Opcode: 8        | j: 4 | k: 4 | i: 4 | D: 12 |
@@ -83,7 +83,7 @@ extension Cyber180CP {
 /// ```
 ///
 /// Given the existence of 16-bit instructions, there may be two, three, or four instructions in a single 64-bit word.
-protocol Cyber180CPInstruction<WordType> {
+protocol Cyber962CPInstruction<WordType> {
     associatedtype WordType: FixedWidthInteger
 
     /// The stride (number of bytes) of the instruction.
@@ -104,17 +104,17 @@ protocol Cyber180CPInstruction<WordType> {
     /// Execute the instruction on a processor,.
     ///
     /// Performs the operation specified by the instruction and returns whether to update `P`, since some instructions will update `P` themselves.
-    func execute(on processor: Cyber180CP) -> Bool
+    func execute(on processor: Cyber962CP) -> Bool
 }
 
-extension Cyber180CPInstruction {
+extension Cyber962CPInstruction {
 
     /// Compute the stride of the instruction from the bit width of its underlying word type.
     var stride: UInt64 { UInt64(WordType.bitWidth / 8) }
 }
 
 /// A jkiD instruction is a 32-bit instruction that has an 8-bit opcode in its leftmost byte.
-protocol Cyber180CPInstructionFormat_jkiD: Cyber180CPInstruction where WordType == UInt32 {
+protocol Cyber962CPInstructionFormat_jkiD: Cyber962CPInstruction where WordType == UInt32 {
 
     /// The additional 4-bit `i` value for this type of instruction.
     var i: UInt8 { get }
@@ -123,7 +123,7 @@ protocol Cyber180CPInstructionFormat_jkiD: Cyber180CPInstruction where WordType 
     var D: UInt16 { get }
 }
 
-extension Cyber180CPInstructionFormat_jkiD {
+extension Cyber962CPInstructionFormat_jkiD {
 
     /// Extract the fields `j`, `k`, `i`, `D` fields from the given instruction word.
     internal static func extract(from word: WordType) -> (j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
@@ -136,7 +136,7 @@ extension Cyber180CPInstructionFormat_jkiD {
 }
 
 /// An SjkiD instruction is a 32-bit instruction that has a 5-bit opcode and 3 S bits in its leftmost byte.
-protocol Cyber180CPInstructionFormat_SjkiD: Cyber180CPInstruction where WordType == UInt32 {
+protocol Cyber962CPInstructionFormat_SjkiD: Cyber962CPInstruction where WordType == UInt32 {
 
     /// The additional 3-bit S value for this type of instruction.
     var S: UInt8 { get }
@@ -148,7 +148,7 @@ protocol Cyber180CPInstructionFormat_SjkiD: Cyber180CPInstruction where WordType
     var D: UInt16 { get }
 }
 
-extension Cyber180CPInstructionFormat_SjkiD {
+extension Cyber962CPInstructionFormat_SjkiD {
 
     /// Extract the `S`, `j`, `k`, `i`, `D` fields from the given instruction word.
     internal static func extract(from word: WordType) -> (S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
@@ -162,10 +162,10 @@ extension Cyber180CPInstructionFormat_SjkiD {
 }
 
 /// A jk instruction is a 16-bit instruction that has an 8-bit opcode in its leftmost byte.
-protocol Cyber180CPInstructionFormat_jk: Cyber180CPInstruction where WordType == UInt16 {
+protocol Cyber962CPInstructionFormat_jk: Cyber962CPInstruction where WordType == UInt16 {
 }
 
-extension Cyber180CPInstructionFormat_jk {
+extension Cyber962CPInstructionFormat_jk {
 
     /// Extract the `j`, `k`, fields from the given instruction word.
     internal static func extract(from word: WordType) -> (j: UInt8, k: UInt8) {
@@ -176,13 +176,13 @@ extension Cyber180CPInstructionFormat_jk {
 }
 
 /// A jkQ instruction is a 32-bit instruction that has an 8-bit opcode in its leftmost byte and a 16-bit `Q` in its rightmost two bytes.
-protocol Cyber180CPInstructionFormat_jkQ: Cyber180CPInstruction where WordType == UInt32 {
+protocol Cyber962CPInstructionFormat_jkQ: Cyber962CPInstruction where WordType == UInt32 {
 
     /// The additional 16-bit `Q` value for this type of instruction.
     var Q: UInt16 { get }
 }
 
-extension Cyber180CPInstructionFormat_jkQ {
+extension Cyber962CPInstructionFormat_jkQ {
 
     /// Extract the `j`, `k`, `Q`, fields from the given instruction word.
     internal static func extract(from word: WordType) -> (j: UInt8, k: UInt8, Q: UInt16) {
@@ -196,8 +196,8 @@ extension Cyber180CPInstructionFormat_jkQ {
 
 // MARK: - Instruction Implementations
 
-/// Cyber 180 `jkiD` instructions
-enum Cyber180CPInstruction_jkiD: Cyber180CPInstructionFormat_jkiD {
+/// Cyber 962 `jkiD` instructions
+enum Cyber962CPInstruction_jkiD: Cyber962CPInstructionFormat_jkiD {
     case ADDFV(j: UInt8, k: UInt8, i: UInt8, D: UInt16)
     case SUBFV(j: UInt8, k: UInt8, i: UInt8, D: UInt16)
     case MULFV(j: UInt8, k: UInt8, i: UInt8, D: UInt16)
@@ -271,13 +271,13 @@ enum Cyber180CPInstruction_jkiD: Cyber180CPInstructionFormat_jkiD {
         return "jkiD" // FIXME: Implement
     }
 
-    func execute(on processor: Cyber180CP) -> Bool {
+    func execute(on processor: Cyber962CP) -> Bool {
         return true // FIXME: Implement
     }
 }
 
-/// Cyber 180 `SjkiD` instructions
-enum Cyber180CPInstruction_SjkiD: Cyber180CPInstructionFormat_SjkiD {
+/// Cyber 962 `SjkiD` instructions
+enum Cyber962CPInstruction_SjkiD: Cyber962CPInstructionFormat_SjkiD {
     case EXECUTE(S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16)
     case LBYTS(S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16)
     case SBYTS(S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16)
@@ -341,7 +341,7 @@ enum Cyber180CPInstruction_SjkiD: Cyber180CPInstructionFormat_SjkiD {
         }
     }
     
-    func execute(on processor: Cyber180CP) -> Bool {
+    func execute(on processor: Cyber962CP) -> Bool {
         switch self {
         case let .EXECUTE(S: S, j: j, k: k, i: i, D: D): EXECUTE(on: processor, S: S, j: j, k: k, i: i, D: D)
         case let .LBYTS(S: S, j: j, k: k, i: i, D: D): LBYTS(on: processor, S: S, j: j, k: k, i: i, D: D)
@@ -350,21 +350,21 @@ enum Cyber180CPInstruction_SjkiD: Cyber180CPInstructionFormat_SjkiD {
         return true
     }
 
-    internal func EXECUTE(on processor: Cyber180CP, S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
+    internal func EXECUTE(on processor: Cyber962CP, S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
         // TODO: Implement EXECUTE
     }
 
-    internal func LBYTS(on processor: Cyber180CP, S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
+    internal func LBYTS(on processor: Cyber962CP, S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
         // TODO: Implement LBYTS
     }
 
-    internal func SBYTS(on processor: Cyber180CP, S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
+    internal func SBYTS(on processor: Cyber962CP, S: UInt8, j: UInt8, k: UInt8, i: UInt8, D: UInt16) {
         // TODO: Implement SBYTS
     }
 }
 
-/// Cyber 180 `jk` instructions
-enum Cyber180CPInstruction_jk: Cyber180CPInstructionFormat_jk {
+/// Cyber 962 `jk` instructions
+enum Cyber962CPInstruction_jk: Cyber962CPInstructionFormat_jk {
     case HALT
     case SYNC
     case EXCHANGE
@@ -442,7 +442,7 @@ enum Cyber180CPInstruction_jk: Cyber180CPInstructionFormat_jk {
         return 0 // FIXME: Implement
     }
 
-    static func decode(opcode: UInt8, word: UInt16) -> Cyber180CPInstruction_jk? {
+    static func decode(opcode: UInt8, word: UInt16) -> Cyber962CPInstruction_jk? {
         return nil // FIXME: Implement
     }
 
@@ -450,14 +450,14 @@ enum Cyber180CPInstruction_jk: Cyber180CPInstructionFormat_jk {
         return "jk" // FIXME: Implement
     }
 
-    func execute(on processor: Cyber180CP) -> Bool {
+    func execute(on processor: Cyber962CP) -> Bool {
         return true // FIXME: Implement
     }
 }
 
 
-/// Cyber 180 `jkQ` instructions
-enum Cyber180CPInstruction_jkQ: Cyber180CPInstructionFormat_jkQ {
+/// Cyber 962 `jkQ` instructions
+enum Cyber962CPInstruction_jkQ: Cyber962CPInstructionFormat_jkQ {
     case LMULT(j: UInt8, k: UInt8, Q: UInt16)
     case SMULT(j: UInt8, k: UInt8, Q: UInt16)
     case LX(j: UInt8, k: UInt8, Q: UInt16)
@@ -529,7 +529,7 @@ enum Cyber180CPInstruction_jkQ: Cyber180CPInstructionFormat_jkQ {
         }
     }
 
-    static func decode(opcode: UInt8, word: UInt32) -> Cyber180CPInstruction_jkQ? {
+    static func decode(opcode: UInt8, word: UInt32) -> Cyber962CPInstruction_jkQ? {
         let (j: j, k: k, Q: Q) = Self.extract(from: word)
 
         switch opcode {
@@ -547,7 +547,7 @@ enum Cyber180CPInstruction_jkQ: Cyber180CPInstructionFormat_jkQ {
         }
     }
 
-    func execute(on processor: Cyber180CP) -> Bool {
+    func execute(on processor: Cyber962CP) -> Bool {
         switch self {
         case let .LMULT(j: j, k: k, Q: Q): LMULT(on: processor, j: j, k: k, Q: Q)
         case let .SMULT(j: j, k: k, Q: Q): SMULT(on: processor, j: j, k: k, Q: Q)
@@ -601,155 +601,155 @@ enum Cyber180CPInstruction_jkQ: Cyber180CPInstructionFormat_jkQ {
         }
     }
 
-    internal func LMULT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func LMULT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement LMULT
     }
 
-    internal func SMULT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func SMULT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func LX(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func LX(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func SX(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func SX(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func LA(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func LA(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func SA(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func SA(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func LBYTP(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func LBYTP(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ENTC(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ENTC(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func LBIT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func LBIT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func SBIT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func SBIT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ADDRQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ADDRQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ADDXQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ADDXQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func MULRQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func MULRQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ENTE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ENTE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ADDAQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ADDAQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ADDPXQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ADDPXQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRREQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRREQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRRNE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRRNE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRRGT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRRGT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRRGE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRRGE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRXEQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRXEQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRXNE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRXNE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRXGT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRXGT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRXGE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRXGE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRFEQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRFEQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRFNE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRFNE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRFGT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRFGT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRFGE(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRFGE(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRINC(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRINC(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRSEG(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRSEG(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BR___(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BR___(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func BRCR(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func BRCR(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func CALLREL(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func CALLREL(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func KEYPOINT(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func KEYPOINT(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func MULXQ(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func MULXQ(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func ENTA(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func ENTA(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func CMPXA(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func CMPXA(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 
-    internal func CALLSEG(on processor: Cyber180CP, j: UInt8, k: UInt8, Q: UInt16) {
+    internal func CALLSEG(on processor: Cyber962CP, j: UInt8, k: UInt8, Q: UInt16) {
         // TODO: Implement XXX.
     }
 }

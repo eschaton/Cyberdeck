@@ -1,6 +1,6 @@
 //
-//  Cyber180CP.swift
-//  Cyberdeck
+//  Cyber962CP.swift
+//  Cyber
 //
 //  Copyright © 2025 Christopher M. Hanson
 //
@@ -18,9 +18,9 @@
 //
 
 
-/// A Cyber180CP implements the Cyber 180 Central Processor.
+/// A Cyber962CP implements the Cyber 962 Central Processor.
 ///
-/// The Cyber 180 Central Processor is a 64-bit processor with:
+/// The Cyber 962 Central Processor is a 64-bit processor with:
 ///
 /// - Byte rather than word addressing
 /// - Two's complement rather than one's complement representation
@@ -28,18 +28,16 @@
 /// - 16 A registers of 48 bits each
 /// - A "4096 times 2^31" byte user address space
 ///
-/// The Cyber 180 also uses IBM-style bit numbering; that is, bit 0 is the "leftmost" (most significant) bit in a word.
-class Cyber180CP {
-
-    /// Designated Intiailizer
-    init(system: Cyber180) {
-        self.system = system
-    }
+/// The Cyber 962 also uses IBM-style bit numbering; that is, bit 0 is the "leftmost" (most significant) bit in a word.
+class Cyber962CP {
 
     // MARK: - System Interconnection
 
     /// The system this Central Processor is a part of.
-    var system: Cyber180
+    let system: Cyber962
+    
+    /// The index of the CP in the system.
+    let index: Int
 
     // MARK: - General Registers
 
@@ -168,6 +166,14 @@ class Cyber180CP {
     }
     internal var _regVMCL: UInt16 = 0
 
+    
+    // MARK: - Initialization
+
+    /// Designated Intiailizer
+    init(system: Cyber962, index: Int) {
+        self.system = system
+        self.index = index
+    }
 
     // MARK: - Memory
 
