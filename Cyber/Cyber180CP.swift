@@ -31,6 +31,16 @@
 /// The Cyber 180 also uses IBM-style bit numbering; that is, bit 0 is the "leftmost" (most significant) bit in a word.
 class Cyber180CP {
 
+    /// Designated Intiailizer
+    init(system: Cyber180) {
+        self.system = system
+    }
+
+    // MARK: - System Interconnection
+
+    /// The system this Central Processor is a part of.
+    var system: Cyber180
+
     // MARK: - General Registers
 
     /// Program Address register

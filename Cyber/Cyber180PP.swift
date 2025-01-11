@@ -25,6 +25,16 @@
 /// - Note: Currently only the I0 processor model is emulated.
 class Cyber180PP {
 
+    /// Designated Intiailizer
+    init(system: Cyber180) {
+        self.system = system
+    }
+
+    // MARK: - System Interconnection
+
+    /// The system this Central Processor is a part of.
+    var system: Cyber180
+
     /// The different models of Peripheral Processor used in Cyber 180 systems.
     enum Model {
         case I0
@@ -967,22 +977,56 @@ enum Cyber180PPInstruction16sc: Cyber180PPInstruction16 {
         return true
     }
 
+    /// Input to `A` from channel `c` when or if active, depending on whether `s` is `0` or `1`.
     internal func IAN(on processor: Cyber180PP) {
+        let mode = self.addressMode
+        let channel = processor.system.channels[Int(mode.c)]
+        let values = channel.input(count: 1, skipIfNotActiveAndFull: mode.s)
+        processor.regA = UInt32(values[0])
     }
 
+    /// Output from `A` to channel `c` when or if active, depending on whether `s` is `0` or `1`.
     internal func OAN(on processor: Cyber180PP) {
+        let mode = self.addressMode
+        let channel = processor.system.channels[Int(mode.c)]
+        let lowA = UInt16(processor.regA)
+        channel.output(words: [lowA], skipIfNotActive: mode.s)
     }
 
+    /// Activate channel `c` when inactive or unconditionally, depending on `s`.
     internal func ACN(on processor: Cyber180PP) {
+        let mode = self.addressMode
+        let channel = processor.system.channels[Int(mode.c)]
+        let waitForInactive = !mode.s
+        channel.activate(onceInactive: waitForInactive)
     }
 
     internal func DCN(on processor: Cyber180PP) {
+        let mode = self.addressMode
+        let channel = processor.system.channels[Int(mode.c)]
+        let waitForActive = !mode.s
+        channel.deactivate(onceActive: waitForActive)
     }
 
     internal func FAN(on processor: Cyber180PP) {
+        let mode = self.addressMode
+        let channel = processor.system.channels[Int(mode.c)]
+        let skipIfActive = mode.s
+        let lowA: UInt16 = UInt16(processor.regA) // we'll only use the lower 12 or 16 bits
+        channel.function(lowA, skipIfActive: skipIfActive)
     }
 
+    /// Master Clear I/O channel `c` marking it active and empty.
+    ///
+    /// - Note: Only supported on model I0.
     internal func MCLR(on processor: Cyber180PP) {
+        guard processor.model == .I0 else {
+            fatalError("Only supported on I0")
+        }
+
+        let c = self.addressMode.c
+        let channel = processor.system.channels[Int(c)]
+        channel.masterClear()
     }
 }
 
