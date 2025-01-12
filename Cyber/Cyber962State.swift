@@ -31,13 +31,13 @@ struct Cyber962VirtualStateExchangePackage {
     /// Virtual Machine Identifier Register
     ///
     /// Combined with `A[0]` in raw format
-    var VMID: UInt8 = 0
-    
+    var VMID: UInt4 = 0
+
     /// Untranslatable Virtual Machine Identifier
     ///
     /// Combined with `A[0]` in raw format
-    var UVMID: UInt8 = 0
-    
+    var UVMID: UInt4 = 0
+
     /// Flags
     ///
     /// Combined with `A[1]` in raw format.
@@ -161,5 +161,133 @@ struct Cyber962VirtualStateExchangePackage {
         precondition(rawValues.count == 198)
         
         // TODO: Implement conversion from raw format.
+    }
+}
+
+
+/// A Cyber 962 CP Stack Frame Save Area.
+///
+/// Tthe information here is derived from chapter 2 of the _Cyber 960 Virtual State Hardware Reference Manual Volume 2 Revision B_, part number 60000133B.
+struct Cyber962StackFrameSaveArea {
+
+    // FIXME: Support CFF/OCF/PND
+    // See Figure 2-9 on page 2-44 (238).
+
+    /// P register.
+    var P: UInt64
+
+    /// VMID register.
+    ///
+    /// Combined with `A[0x0]` in raw format.
+    var VMID: UInt4
+
+    /// Frame description.
+    ///
+    /// Combined with `A[0x1]` in raw format.
+    var frameDescription: UInt16
+
+    /// User Mask Register
+    ///
+    /// Combined with `A[0x2]` in raw format.
+    var UM: UInt16
+
+    /// User Condition Register
+    ///
+    /// Combined with `A[0x4]` in raw format.
+    var UCR: UInt16
+
+    /// Monitor Condition Register
+    ///
+    /// Combined with `A[0x5]` in raw format.
+    var MCR: UInt16
+
+    /// A registers.
+    var A: [UInt48]
+
+    /// X registers
+    var X: [UInt64]
+
+    // MARK: - Raw Value Packing/Unpacking
+
+    /// Pack a Stack Frame Save Area descriptor.
+    static func pack(Xs: UInt4, At: UInt4, Xt: UInt4) -> UInt12 {
+        var descriptor: UInt12 = 0
+        descriptor |= UInt12(Xs) << 8
+        descriptor |= UInt12(At) << 4
+        descriptor |= UInt12(Xt) << 0
+        return descriptor
+    }
+
+    /// Unpack a Stack Frame Save Area descriptor.
+    static func unpack(descriptor: UInt12) -> (Xs: UInt4, At: UInt4, Xt: UInt4) {
+        let Xs: UInt4 = UInt4((descriptor & 0xF00) >> 8)
+        let At: UInt4 = UInt4((descriptor & 0x0F0) >> 4)
+        let Xt: UInt4 = UInt4((descriptor & 0x00F) >> 0)
+        return (Xs: Xs, At: At, Xt: Xt)
+    }
+
+    /// Get a sequence of words to form a raw Stack Frame Save Area package.
+    func rawValues(for descriptor: UInt12) -> [UInt64] {
+        let (Xs, At, Xt) = Self.unpack(descriptor: descriptor)
+        let countX: Int = Int(Xt - Xs + 1)
+        let countA: Int = Int((At > 2) ? (At + 1) : 3)
+        let count = 1 + countA + countX
+        var values: [UInt64] = Array(repeating: 0, count: count)
+
+        values[0] = self.P
+
+        for a in 0...Int(At + 1) {
+            values[1 + a] = self.A[a]
+
+            switch a {
+            case 1: values[1 + a] = values[1 + a] | UInt64(self.VMID) << 56
+            case 2: values[1 + a] = values[1 + a] | UInt64(descriptor) << 48
+            case 3: values[1 + a] = values[1 + a] | UInt64(self.UM) << 48
+            case 5: values[1 + a] = values[1 + a] | UInt64(self.UCR) << 48
+            case 6: values[1 + a] = values[1 + a] | UInt64(self.MCR) << 48
+            default: break // do nothing
+            }
+        }
+
+        for x in Int(Xs)...Int(Xt) {
+            values[1 + countA + (x - Int(Xs))] = self.X[x]
+        }
+
+        return values
+    }
+
+    /// Initialize a Stack Frame Save Area from raw memory words.
+    init(rawValues values: [UInt64]) {
+        precondition(values.count >= 4)
+
+        let descriptor: UInt12 = UInt12(values[2] >> 48)
+        let (Xs, At, Xt) = Self.unpack(descriptor: descriptor)
+        let countX: Int = Int(Xt - Xs + 1)
+        let countA: Int = Int((At > 2) ? (At + 1) : 3)
+
+        self.P = values[0]
+        self.VMID = 0
+        self.frameDescription = descriptor
+        self.UM = 0
+        self.UCR = 0
+        self.MCR = 0
+        self.A = Array(repeating: 0, count: countA)
+        self.X = Array(repeating: 0, count: countX)
+
+        for a in 0...Int(At) {
+            self.A[a] = values[1 + a]
+
+            switch a {
+            case 1: self.VMID =  UInt4(values[1 + a] >> 56) & 0xF
+            case 3: self.UM   = UInt16(values[1 + a] >> 48)
+            case 5: self.UCR  = UInt16(values[1 + a] >> 48)
+            case 6: self.MCR  = UInt16(values[1 + a] >> 48)
+            default: break // do nothing
+            }
+        }
+
+        for x in Int(Xs)...Int(Xt) {
+            self.X[x] = values[1 + countA + (x - Int(Xs))]
+        }
     }
 }

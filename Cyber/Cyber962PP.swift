@@ -25,19 +25,20 @@
 /// - Note: Currently only the I0 processor model is emulated.
 class Cyber962PP {
 
-    /// Designated Intiailizer
-    init(inputOutputUnit: Cyber962IOU, index: Int) {
-        self.inputOutputUnit = inputOutputUnit
-        self.index = index
-    }
-
     // MARK: - System Interconnection
     
     /// The IOU this Peripheral Processor is a part of.
     var inputOutputUnit: Cyber962IOU
     
     /// The index of this Peripheral Procesor within the IOU.
-    var index: Int
+    let index: Int
+
+    /// The barrel this Peripheral Processor is part of.
+    ///
+    /// Within each IOU, each PP is organized by "barrel," with 5 PP per barrel. The barrels define which channels each PP gets access to, in addition to certain channels that are always accessible.
+    var barrel: Int {
+        return self.index % 5
+    }
 
     /// The system this Central Processor is a part of.
     var system: Cyber962 {
@@ -74,7 +75,7 @@ class Cyber962PP {
         get { return self._regP }
         set { self._regP = newValue }
     }
-    internal var _regP: UInt16 = 0
+    internal var _regP: UInt16
 
     /// Relocation Register
     ///
@@ -85,6 +86,17 @@ class Cyber962PP {
         set { self._regR = newValue }
     }
     internal var _regR: UInt32 = 0
+
+
+    // MARK: - Initialization
+
+    /// Designated Intiailizer
+    init(inputOutputUnit: Cyber962IOU, index: Int) {
+        self.inputOutputUnit = inputOutputUnit
+        self.index = index
+        self._regA = inputOutputUnit.index == 0 ? 0o10000 : 0o20000
+        self._regP = 0o1
+    }
 
 
     // MARK: - PP Memory

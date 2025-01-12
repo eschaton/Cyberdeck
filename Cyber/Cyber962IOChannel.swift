@@ -20,18 +20,35 @@
 
 /// An I/O Channel on the Cyber 962.
 open class Cyber962IOChannel {
-    
-    enum WellKnownChannel: UInt8 {
-        case internal0 = 0o00
-        case internal1 = 0o01
-        case internal12 = 0o12
-        case internal13 = 0o13
-        case realTimeClock = 0o14
-        case twoPortMulitplexer = 0o15
-        case maintenance = 0o17
-        case scsi0 = 0o32
-        case scsi1 = 0o33
-    }
+
+
+    /// Cross-barrel IOU channel 0.
+    static let crossBarrelIOU0 = 0o00
+
+    /// Cross-barrel IOU channel 1.
+    static let crossBarrelIOU1 = 0o01
+
+    /// Cross-barrel IOU channel 2.
+    static let crossBarrelIOU2 = 0o12
+
+    /// Cross-barrel IOU channel 3.
+    static let crossBarrelIOU3 = 0o13
+
+    /// Real-time clock.
+    static let realTimeClock = 0o14
+
+    /// Two-port multiplexer.
+    static let twoPortMulitplexer = 0o15
+
+    /// Maintenance Channel
+    static let maintenance = 0o17
+
+    /// Deadstart Load (DLD) SCSI channel 0.
+    static let scsi0 = 0o32
+
+    /// Deadstart Load (DLD) SCSI channel 1.
+    static let scsi1 = 0o33
+
     
 
     // MARK: - System Interconnection
@@ -78,7 +95,7 @@ open class Cyber962IOChannel {
     }
 
     /// The width of the channel, defaults to 12-bit.
-    var width: Width
+    let width: Width
 
     /// Whether the channel is full, starts non-full.
     var full: Bool = false
@@ -99,6 +116,29 @@ open class Cyber962IOChannel {
     // Ideally the API used by the Peripheral Processor will handle the asynchronous
     // state management, while the API available for subclasses to override will be
     // synchronous and just concerned with write/read/function.
+
+    /// Indicate whether the given PP is allowed access to this channel.
+    ///
+    /// Some channels may only be accessed from certain barrels.
+    func accessAllowed(from processor: Cyber962PP) -> Bool {
+        let sharedChannelIndexes: Set<Int> = [ Self.crossBarrelIOU0,
+                                               Self.crossBarrelIOU1,
+                                               Self.crossBarrelIOU2,
+                                               Self.crossBarrelIOU3,
+                                               Self.twoPortMulitplexer,
+                                               Self.maintenance,
+                                               Self.scsi0,
+                                               Self.scsi1 ]
+        
+        let perBarrelRanges: [Int: ClosedRange<Int>] = [ 0: 0o02...0o04,
+                                                         1: 0o05...0o11,
+                                                         2: 0o20...0o24,
+                                                         3: 0o25...0o31 ]
+
+        let index = self.index
+
+        return sharedChannelIndexes.contains(index) || perBarrelRanges[processor.barrel]!.contains(index)
+    }
 
     /// Receive input from the channel.
     ///

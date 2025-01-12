@@ -20,18 +20,16 @@
 
 /// A Cyber962IOU emulates a Cyber 962 I/O Unit.
 class Cyber962IOU {
-    
+
+
     // MARK: - System Interconnection
 
     /// The system to which this IOU belongs
-    var system: Cyber962
+    let system: Cyber962
     
     /// The index of this Peripheral Procesor within the IOU.
-    var index: Int
-    
-    
-    // MARK: - Facilities
-    
+    let index: Int
+
     /// The Peripheral Processors (PPs) that are part of this I/O Unit.
     var peripheralProcessors: [Cyber962PP] = []
     
@@ -44,8 +42,50 @@ class Cyber962IOU {
     var barrels: Int {
         return self.peripheralProcessors.count / 5
     }
-    
-    
+
+
+    // MARK: - Maintenance Registers
+
+    struct MaintenanceRegisterAddress {
+        static let EID = 0x10
+        static let EC = 0x30
+        static let FS1 = 0x80
+        static let FS2 = 0x81
+        static let FSM = 0x18
+        static let OI = 0x12
+        static let OSB = 0x21
+        static let SS = 0x00
+        static let TM = 0xA0
+    }
+
+    /// Element Identifier Register
+    var regEID: UInt32 = 0
+
+    /// Environment Control Register
+    var regEC: UInt32 = 0
+
+    /// Fault Status Register 1
+    var regFS1: UInt64 = 0
+
+    /// Fault Status Register 2
+    var regFS2: UInt64 = 0
+
+    /// Fault Status Mask Register
+    var regFSM: UInt64 = 0
+
+    /// Options Installed Register
+    var regOI: UInt64 = 0
+
+    /// OS Bounds Register
+    var regOSB: UInt64 = 0
+
+    /// Status Summary Register
+    var regSS: UInt6 = 0
+
+    /// Test Mode Register
+    var regTM: UInt16 = 0
+
+
     // MARK: - Initialization
     
     /// Designated initializer.
