@@ -74,6 +74,23 @@
 		9F5162472D27F55C00AB8296 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9F2422502D34AA3400506BC6 /* Exceptions for "Cyber" folder in "Cyber" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			publicHeaders = (
+				Cyber.h,
+				Cyber180CM.h,
+				Cyber180CP.h,
+				Cyber962.h,
+				Cyber962IOU.h,
+				Cyber962PP.h,
+				CyberDefines.h,
+				CyberTypes.h,
+			);
+			target = 9F5161E82D27638000AB8296 /* Cyber */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9F5161BA2D27636B00AB8296 /* Cyberdeck */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -92,12 +109,20 @@
 		};
 		9F5161EA2D27638000AB8296 /* Cyber */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9F2422502D34AA3400506BC6 /* Exceptions for "Cyber" folder in "Cyber" target */,
+			);
 			path = Cyber;
 			sourceTree = "<group>";
 		};
 		9F5161F82D27638000AB8296 /* CyberTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CyberTests;
+			sourceTree = "<group>";
+		};
+		9FBEC1032D35CBE2001300EF /* CyberSwift */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CyberSwift;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -151,6 +176,7 @@
 				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
 				9F5161CA2D27636C00AB8296 /* CyberdeckTests */,
 				9F5161D42D27636C00AB8296 /* CyberdeckUITests */,
+				9FBEC1032D35CBE2001300EF /* CyberSwift */,
 				9F5161EA2D27638000AB8296 /* Cyber */,
 				9F5161F82D27638000AB8296 /* CyberTests */,
 				9F5161B92D27636B00AB8296 /* Products */,
@@ -323,6 +349,7 @@
 					};
 					9F5161E82D27638000AB8296 = {
 						CreatedOnToolsVersion = 16.2;
+						LastSwiftMigration = 1620;
 					};
 					9F5161F12D27638000AB8296 = {
 						CreatedOnToolsVersion = 16.2;
@@ -696,6 +723,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -719,6 +747,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -729,6 +758,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
