@@ -61,11 +61,11 @@ typedef CyberWord16 (*Cyber962PPInstruction)(struct Cyber962PP *processor, union
 ///
 /// - Parameters:
 ///   - processor: The state for this Peripheral Processor at the start of instruction decoding.
-///   - word: The instruction word itself, for field recovery.
+///   - instructionWord: The instruction word itself.
 ///   - address: The address at which the instruction was found.
 ///
 /// - Returns: A function pointer if the instruction word can be decoded, `NULL` if not.
-CYBER_EXPORT Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *processor, CyberWord16 word, CyberWord16 address);
+CYBER_EXPORT Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord, CyberWord16 address);
 
 
 CYBER_HEADER_END

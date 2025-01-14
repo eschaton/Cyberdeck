@@ -27,12 +27,14 @@
 CYBER_SOURCE_BEGIN
 
 
-/// Get the combined `dm` value as an 18-bit quantity.
-static inline CyberWord18 Cyber962PPInstruction_dm(union Cyber962PPInstructionWord instructionWord, CyberWord16 word2)
+/// Compute a combined `m.d` value as an 18-bit quantity.
+///
+/// To compute a combined value, `d` provides the most significant 6 bits and `m` provides the least significant 12 bits.
+static inline CyberWord18 Cyber962PPComputeConstant(struct Cyber962PP *processor, CyberWord6 d)
 {
-    CyberWord18 result = 0;
-    result |= (instructionWord._d.d & 0x00000003F) << 12;
-    result |= (word2 & 0xFFF);
+    CyberWord18 d18 = d & 0x3F;
+    CyberWord18 m18 = Cyber962PPReadSingle(processor, processor->_regP + 1) & 0x0FFF;
+    CyberWord18 result = (d18 << 12) | m18;
     return result;
 }
 
@@ -72,11 +74,13 @@ static inline CyberWord16 Cyber962PPComputeMemoryAddress(struct Cyber962PP *proc
 }
 
 
-Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *processor, CyberWord16 word, CyberWord16 address)
+Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord, CyberWord16 address)
 {
-    union Cyber962PPInstructionWord instructionWord;
-    instructionWord._raw = word;
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    Cyber962PPInstruction _Nullable instruction = processor->_instructionCache[opcode];
+    if (instruction) return instruction;
+
     uint8_t d = instructionWord._d.d;
 
     switch (opcode) {
@@ -92,7 +96,8 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01040: // LDIL ((d))
         case 00050: // LDM (m+(d))
         case 01050: // LDML (m+(d))
-            return Cyber962PPInstruction_LDx;
+            instruction = Cyber962PPInstruction_LDx;
+            break;
 
             // Store
         case 00034: // STD (d)
@@ -101,7 +106,8 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01044: // STIL ((d))
         case 00054: // STM (m+(d))
         case 01054: // STML (m+(d))
-            return Cyber962PPInstruction_STx;
+            instruction = Cyber962PPInstruction_STx;
+            break;
 
             // Arithmetic Instructions
 
@@ -114,7 +120,8 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01041: // ADIL ((d))
         case 00051: // ADM (m+(d))
         case 01051: // ADML (m+(d))
-            return Cyber962PPInstruction_ADx;
+            instruction = Cyber962PPInstruction_ADx;
+            break;
 
             // Subtract
         case 00017: // SBN d
@@ -124,13 +131,15 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01042: // SBIL ((d))
         case 00052: // SBM (m+(d))
         case 01052: // SBML (m+(d))
-            return Cyber962PPInstruction_SBx;
+            instruction = Cyber962PPInstruction_SBx;
+            break;
 
             // Logical Instructions
 
             // Shift
         case 00010: // SHN d
-            return Cyber962PPInstruction_SHN;
+            instruction = Cyber962PPInstruction_SHN;
+            break;
 
             // Logical Difference
         case 00011: // LMN d
@@ -141,7 +150,8 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01043: // LMIL ((d))
         case 00053: // LMM (m+(d))
         case 01053: // LMNL (m+(d))
-            return Cyber962PPInstruction_LMx;
+            instruction = Cyber962PPInstruction_LMx;
+            break;
 
             // Logical Product
         case 00012: // LPN d
@@ -149,11 +159,13 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01022: // LPDL (d)
         case 01023: // LPIL ((d))
         case 01024: // LPML (m+(d))
-            return Cyber962PPInstruction_LPx;
+            instruction = Cyber962PPInstruction_LPx;
+            break;
 
             // Selective Clear
         case 00013: // SCN d
-            return Cyber962PPInstruction_SCN;
+            instruction = Cyber962PPInstruction_SCN;
+            break;
 
             // Replace Instructions
 
@@ -164,7 +176,8 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01045: // RAIL ((d))
         case 00055: // RAM (m+(d))
         case 01055: // RAML (m+(d))
-            return Cyber962PPInstruction_RAx;
+            instruction = Cyber962PPInstruction_RAx;
+            break;
 
             // Replace Add One
         case 00036: // AOD (d)
@@ -173,7 +186,8 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01046: // AOIL ((d))
         case 00056: // AOM (m+(d))
         case 01056: // AOML (m+(d))
-            return Cyber962PPInstruction_AOx;
+            instruction = Cyber962PPInstruction_AOx;
+            break;
 
             // Replace Subtract
         case 00037: // SOD (d)
@@ -182,45 +196,51 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01047: // SOIL ((d))
         case 00057: // SOM (m+(d))
         case 01057: // SOML (d+(d))
-            return Cyber962PPInstruction_SOx;
+            instruction = Cyber962PPInstruction_SOx;
+            break;
 
             // Branch Instructions
 
         case 00001: // LJM (m+(d))
         case 00002: // RJM (m+(d))
-            return Cyber962PPInstruction_xJM;
+            instruction = Cyber962PPInstruction_xJM;
+            break;
+
         case 00003: // UJN d
         case 00004: // ZJN d
         case 00005: // NJN d
         case 00006: // PJN d
         case 00007: // MJN d
-            return Cyber962PPInstruction_xJN;
+            instruction = Cyber962PPInstruction_xJN;
+            break;
 
             // Central Memory Access Instructions
-            // FIXME: Add functions for these
 
         case 00024: // LRD d
         case 00025: // SRD d
-            return Cyber962PPInstruction_xRD;
+            instruction = Cyber962PPInstruction_xRD;
+            break;
 
         case 00060: // CRD (A),d
         case 01060: // CRDL (A),d
         case 00061: // CRM (d),(A),m
         case 01061: // CRML (d),(A),m
-            return Cyber962PPInstruction_CRx;
+            instruction = Cyber962PPInstruction_CRx;
+            break;
 
         case 01000: // RDSL d,(A)
         case 01001: // RDCL d,(A)
-            return Cyber962PPInstruction_RDxL;
+            instruction = Cyber962PPInstruction_RDxL;
+            break;
 
         case 00062: // CWD (A),(d)
         case 01062: // CWDL (A),d
         case 00063: // CWM (d),(A),m
         case 01063: // CWML (d),(A),m
-            return Cyber962PPInstruction_CWx;
+            instruction = Cyber962PPInstruction_CWx;
+            break;
 
             // Input/Output Instructions
-            // FIXME: Add functions for these
 
         case 00064: // AJM c,m || SCF c,m (s)
         case 01064: // FSJM c,m
@@ -228,23 +248,27 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01065: // FCJM c,m
         case 00066: // FJM c,m || SFM c,m (s)
         case 00067: // EJM c,m || CFM c,m (s)
-            return (instructionWord._sc.s) ? Cyber962PPInstruction_CTRL : Cyber962PPInstruction_IOJ;
+            instruction = (instructionWord._sc.s) ? Cyber962PPInstruction_CTRL : Cyber962PPInstruction_IOJ;
+            break;
 
         case 00070: // IANW c || IANI c
         case 00071: // IAM c,m
         case 01071: // IAPM c,m
-            return Cyber962PPInstruction_IN;
+            instruction = Cyber962PPInstruction_IN;
+            break;
 
         case 00072: // OANW c || OANI c
         case 00073: // OAM c,m
         case 01073: // OAPM c,m
-            return Cyber962PPInstruction_OUT;
+            instruction = Cyber962PPInstruction_OUT;
+            break;
 
         case 00074: // ACNW c || ACNU c
         case 00075: // DCNW c || DCNU c
         case 00076: // FANW c || FANI c
         case 00077: // FNCW c || FNCI c
-            return Cyber962PPInstruction_CTRL;
+            instruction = Cyber962PPInstruction_CTRL;
+            break;
 
             // Other IOU Instructions
 
@@ -275,11 +299,13 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
         case 01074:
         case 01076:
         case 01077: // PSN
-            return Cyber962PPInstruction_PSN;
+            instruction = Cyber962PPInstruction_PSN;
+            break;
 
             // Keypoint Instruction
         case 00027: // KPT d
-            return Cyber962PPInstruction_KPT;
+            instruction = Cyber962PPInstruction_KPT;
+            break;
 
             // Exchange Jumps
         case 00026: {
@@ -292,13 +318,16 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
                 case 005: // EXN d
                 case 006: // EXN d
                 case 007: // EXN d
-                    return Cyber962PPInstruction_EXN;
+                    instruction = Cyber962PPInstruction_EXN;
+                    break;
 
                 case 010: // MXN d
-                    return Cyber962PPInstruction_MXN;
+                    instruction = Cyber962PPInstruction_MXN;
+                    break;
 
                 case 020: // MAN d
-                    return Cyber962PPInstruction_MAN;
+                    instruction = Cyber962PPInstruction_MAN;
+                    break;
 
                 case 030: // MAN 2*d
                 case 031: // MAN 2*d
@@ -308,32 +337,42 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
                 case 035: // MAN 2*d
                 case 036: // MAN 2*d
                 case 037: // MAN 2*d
-                    return Cyber962PPInstruction_MAN2;
+                    instruction = Cyber962PPInstruction_MAN2;
+                    break;
 
                 default: // none
                     assert(false); // Unknown instruction
-                    return NULL;
+                    instruction = NULL;
+                    break;
             }
         } break;
         case 01026: // INPN d
-            return Cyber962PPInstruction_INPN;
+            instruction = Cyber962PPInstruction_INPN;
+            break;
 
         default: // none
             assert(false); // Unknown instruction
-            return NULL;
+            instruction = NULL;
+            break;
     }
+
+    processor->_instructionCache[opcode] = (void *)instruction;
+
+    return instruction;
 }
 
 
 // MARK: - Instruction Implementations
 
+/// Implementation of "Load" instrucitons.
 CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
     CyberWord12 opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
         case 00014: { // LDN d
-            processor->_regA = instructionWord._d.d;
+            CyberWord18 newA = instructionWord._d.d;
+            processor->_regA = newA;
             return 1;
         } break;
 
@@ -344,8 +383,7 @@ CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber9
         } break;
 
         case 00020: { // LDC d,m
-            CyberWord16 m = Cyber962PPReadSingle(processor, processor->_regP + 1);
-            CyberWord18 newA = Cyber962PPInstruction_dm(instructionWord, m);
+            CyberWord18 newA = Cyber962PPComputeConstant(processor, instructionWord._d.d);
             processor->_regA = newA;
             return 2;
         } break;
@@ -359,7 +397,7 @@ CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber9
 
         case 01030: { // LDDL (d)
             CyberWord16 d16 = instructionWord._d.d;
-            CyberWord18 newA = Cyber962PPReadSingle(processor, d16);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, d16) & 0xFFFF;
             processor->_regA = newA;
             return 1;
         } break;
@@ -373,7 +411,7 @@ CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber9
 
         case 01040: { // LDIL ((d))
             CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
-            CyberWord18 newA = Cyber962PPReadSingle(processor, address);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, address) & 0xFFFF;
             processor->_regA = newA;
             return 1;
         } break;
@@ -387,7 +425,7 @@ CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber9
 
         case 01050: { // LDML (m+(d))
             CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
-            CyberWord18 newA = Cyber962PPReadSingle(processor, address);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, address) & 0xFFFF;
             processor->_regA = newA;
             return 2;
         } break;
@@ -400,6 +438,7 @@ CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber9
     return 0;
 }
 
+/// Implementation of "Store" instructions.
 CyberWord16 Cyber962PPInstruction_STx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
@@ -409,36 +448,42 @@ CyberWord16 Cyber962PPInstruction_STx(struct Cyber962PP *processor, union Cyber9
             CyberWord16 address = instructionWord._d.d;
             CyberWord16 newValue = processor->_regA & 0x00FFF;
             Cyber962PPWriteSingle(processor, address, newValue);
+            return 1;
         } break;
 
         case 01034: { // STDL (d)
             CyberWord16 address = instructionWord._d.d;
             CyberWord16 newValue = processor->_regA & 0x0FFFF;
             Cyber962PPWriteSingle(processor, address, newValue);
+            return 1;
         } break;
 
         case 00044: { // STI ((d))
             CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
             CyberWord16 newValue = processor->_regA & 0x00FFF;
             Cyber962PPWriteSingle(processor, address, newValue);
+            return 1;
         } break;
 
         case 01044: { // STIL ((d))
             CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
             CyberWord16 newValue = processor->_regA & 0x0FFFF;
             Cyber962PPWriteSingle(processor, address, newValue);
+            return 1;
         } break;
 
         case 00054: { // STM (m+(d))
             CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
             CyberWord16 newValue = processor->_regA & 0x00FFF;
             Cyber962PPWriteSingle(processor, address, newValue);
+            return 2;
         } break;
 
         case 01054: { // STML (m+(d))
             CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
             CyberWord16 newValue = processor->_regA & 0x0FFFF;
             Cyber962PPWriteSingle(processor, address, newValue);
+            return 2;
         } break;
 
         default:
@@ -449,134 +494,551 @@ CyberWord16 Cyber962PPInstruction_STx(struct Cyber962PP *processor, union Cyber9
     return 0;
 }
 
+/// Implementation of "Add" instruction.
 CyberWord16 Cyber962PPInstruction_ADx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00016: { // ADN d
+            CyberWord18 addend = instructionWord._d.d;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00021: { // ADC d,m
+            CyberWord18 addend = Cyber962PPComputeConstant(processor, instructionWord._d.d);
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 00031: { // ADD (d)
+            CyberWord18 addend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0x0FFF;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01031: { // ADDL (d)
+            CyberWord18 addend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0xFFFF;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00041: { // ADI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01041: { // ADIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00051: { // ADM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 01051: { // ADML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA + addend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
+/// Implementation of "Subtract" instructions.
 CyberWord16 Cyber962PPInstruction_SBx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00017: { // SBN d
+            CyberWord18 subtractend = instructionWord._d.d;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00032: { // SBD (d)
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0x0FFF;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01032: { // SBDL (d)
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0xFFFF;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00042: { // SBI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01042: { // SBIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00052: { // SBM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 01052: { // SBML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA - subtractend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
+/// Implementation of Shift instruction.
 CyberWord16 Cyber962PPInstruction_SHN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    CyberWord64 d64 = instructionWord._d.d;
+    CyberWord64 oldA64 = processor->_regA;
+
+    // SHN d
+    if (d64 < 040) {
+        // Positive is a left shift, circular.
+        CyberWord64 left = d64;
+        CyberWord64 shifted = oldA64 << left;
+        // FIXME: Handle circularity.
+        CyberWord18 newA = shifted & 0x0003FFFF;
+        processor->_regA = newA;
+    } else {
+        // Negative is a right shift, end-off.
+        CyberWord64 right = 077 - d64;
+        CyberWord64 shifted = oldA64 >> right;
+        CyberWord18 newA = shifted & 0x0003FFFF;
+        processor->_regA = newA;
+    }
+
+    return 1;
 }
 
+/// Implementation of "Logical Minus" (XOR) instructions.
 CyberWord16 Cyber962PPInstruction_LMx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00011: { // LMN d
+            CyberWord18 xorend = instructionWord._d.d;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00023: { // LMC d,m
+            CyberWord18 xorend = Cyber962PPComputeConstant(processor, instructionWord._d.d);
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 00033: { // LMD (d)
+            CyberWord18 xorend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0x0FFF;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01033: { // LMDL (d)
+            CyberWord18 xorend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0xFFFF;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00043: { // LMI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 xorend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01043: { // LMIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 xorend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00053: { // LMM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 xorend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 01053: { // LMNL (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 xorend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA ^ xorend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
+   return 0;
 }
 
+/// Implementation of "Logical Product" (AND) instructions.
 CyberWord16 Cyber962PPInstruction_LPx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00012: { // LPN d
+            CyberWord18 andend = instructionWord._d.d;
+            CyberWord18 newA = processor->_regA & andend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00022: { // LPC m,d
+            CyberWord18 andend = Cyber962PPComputeConstant(processor, instructionWord._d.d);
+            CyberWord18 newA = processor->_regA & andend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 01022: { // LPDL (d)
+            CyberWord18 andend = Cyber962PPReadSingle(processor, instructionWord._d.d) & 0xFFFF;
+            CyberWord18 newA = processor->_regA & andend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01023: { // LPIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 andend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA & andend;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01024: { // LPML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 andend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = processor->_regA & andend;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
+/// Implementation of "Selective Clear" instruction, which clears bits of `A` based on which bits of `d` are `1`.
 CyberWord16 Cyber962PPInstruction_SCN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    CyberWord18 d18 = instructionWord._d.d;
+    CyberWord18 d18inv = ~d18 & 0x0003FFFF;
+    CyberWord18 oldA = processor->_regA;
+    CyberWord18 newA = oldA & d18inv;
+    processor->_regA = newA;
+    return 1;
 }
 
+/// Implementation of "Replace Add" instructions.
 CyberWord16 Cyber962PPInstruction_RAx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement RAx instructions.
+
     return 0;
 }
 
+/// Implementation of "Replace Add One" instructions.
 CyberWord16 Cyber962PPInstruction_AOx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement AOx instructions.
+
     return 0;
 }
 
+/// Implementation of "Replace Subtract One" instructions.
 CyberWord16 Cyber962PPInstruction_SOx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement SOx instructions.
+
     return 0;
 }
 
+/// Implementation of some "Jump" instructions, specifically Long Jump and Return Jump.
 CyberWord16 Cyber962PPInstruction_xJM(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00001: { // LJM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            processor->_regP = address;
+            return 0;
+        } break;
+
+        case 00002: { // RJM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord16 oldP = processor->_regP;
+            Cyber962PPWriteSingle(processor, address, oldP + 2);
+            processor->_regP = address + 1;
+            return 0;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
+/// Implementation of  "Branch" instructions.
 CyberWord16 Cyber962PPInstruction_xJN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    CyberWord12 opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    int64_t oldP64 = processor->_regP;
+    int64_t d64 = instructionWord._d.d;
+    int64_t pAdj = (d64 < 040) ? d64 : -(077 - d64);
+    bool condition = false;
+
+    switch (opcode) {
+        case 00003: // UJN d
+            condition = true;
+            break;
+
+        case 00004: // ZJN d
+            condition = (processor->_regA == 0x00000000);
+            break;
+
+        case 00005: // NJN d
+            condition = (processor->_regA != 0x00000000);
+            break;
+
+        case 00006: // PJN d
+            condition = ((processor->_regA & 0x00020000) == 0x00000000);
+            break;
+
+        case 00007: // MJN d
+            condition = ((processor->_regA & 0x00020000) == 0x00020000);
+            break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
+    if (condition) {
+        int64_t newP64 = oldP64 + pAdj;
+        processor->_regP = newP64 & 0x000000000000FFFF;
+    }
+
     return 0;
 }
 
+/// Implementation of "Load/Store R" instructions.
 CyberWord16 Cyber962PPInstruction_xRD(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // TODO: Implement Load/Store R instructions.
+    CyberWord12 opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    CyberWord6 d = instructionWord._d.d;
+    if (d == 0) {
+        // If `d` is 0, the instruction is a pass.
+        return 1;
+    }
+
+    switch (opcode) {
+        case 00024: { // LRD d
+            CyberWord32 lower = Cyber962PPReadSingle(processor, d) & 0x03FF;
+            CyberWord32 upper = Cyber962PPReadSingle(processor, d + 1) & 0x07FF;
+            CyberWord32 newR = (upper << 18) | (lower << 6);
+            processor->_regR = newR;
+        } break;
+
+        case 00025: { // SRD d
+            CyberWord32 oldR = processor->_regR;
+            CyberWord16 lower = (oldR >> 6) & 0x03FF;
+            CyberWord16 upper = (oldR >> 18) & 0x07FF;
+            Cyber962PPWriteSingle(processor, d, lower);
+            Cyber962PPWriteSingle(processor, d + 1, upper);
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
+    return 1;
 }
 
+/// Implementation of "Central Read" instructions.
 CyberWord16 Cyber962PPInstruction_CRx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement Central Read instructions.
+
     return 0;
 }
 
+/// Implementation of "Central Read with Lock" instructions.
 CyberWord16 Cyber962PPInstruction_RDxL(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement Central Read with Lock instructions.
+
     return 0;
 }
 
+/// Implementation of "Central Write" instructions.
 CyberWord16 Cyber962PPInstruction_CWx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement Central Write instructions.
+
     return 0;
 }
 
+/// Implementation of "I/O Jump" instructions.
 CyberWord16 Cyber962PPInstruction_IOJ(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement I/O Jump instructions.
+
     return 0;
 }
 
+/// Implementation of "I/O Input" instructions.
 CyberWord16 Cyber962PPInstruction_IN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement I/O Input instructions.
+
     return 0;
 }
 
+/// Implementation of "I/O Output" instructions.
 CyberWord16 Cyber962PPInstruction_OUT(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement I/O Output instructions.
+
     return 0;
 }
 
+/// Implementation of "I/O Control" instructions.
 CyberWord16 Cyber962PPInstruction_CTRL(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
+    // TODO: Implement I/O Control instructions.
+
     return 0;
 }
 
+/// Implementation of "Pass" instructions.
 CyberWord16 Cyber962PPInstruction_PSN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // Do nothing but advance P.
+
+    return 1;
 }
 
+/// Implementation of "Keypoint" instructions.
 CyberWord16 Cyber962PPInstruction_KPT(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // Do nothing but set an indicator from `d` and advance P.
+
+    // FIXME: Do something better for Keypoint.
+
+    return 1;
 }
 
 CyberWord16 Cyber962PPInstruction_EXN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // TODO: Implement Exchange Jump instruction.
+
+    return 1;
 }
 
+/// Implementation of the "Monitor Exchange Jump" instruction.
 CyberWord16 Cyber962PPInstruction_MXN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // TODO: Implement Monitor Exchange Jump instruction.
+
+    return 1;
 }
 
+/// Implementation of the "Monitor Exchange Jump to MA" instruction.
 CyberWord16 Cyber962PPInstruction_MAN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // TODO: Implement Monitor Exchange Jump to MA instruction.
+
+    return 1;
 }
 
+/// Implementation of the "Monitor Exchange Jump to MA (2x)" instruction.
 CyberWord16 Cyber962PPInstruction_MAN2(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // TODO: Implement Monitor Exchange Jump to MA (2x) instruction.
+
+    return 1;
 }
 
+/// Implementation of "Interrupt Processor" instruction.
 CyberWord16 Cyber962PPInstruction_INPN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return 0;
+    // TODO: Implement Interrupt instruction.
+
+    return 1;
 }
 
 

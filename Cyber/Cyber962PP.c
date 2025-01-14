@@ -19,9 +19,10 @@
 
 #include "Cyber962PP_Internal.h"
 
+#include "Cyber962PPInstructions.h"
+
 #include <assert.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 CYBER_SOURCE_BEGIN
@@ -39,6 +40,8 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
 
     pp->_storage = calloc(8192, sizeof(CyberWord16));
 
+    pp->_instructionCache = calloc(65536, sizeof(void *));
+
     Cyber962PPReset(pp);
 
     return pp;
@@ -50,6 +53,7 @@ void Cyber962PPDispose(struct Cyber962PP * _Nullable pp)
     if (pp == NULL) return;
 
     free(pp->_storage);
+    free(pp->_instructionCache);
 
     free(pp);
 }
@@ -84,12 +88,9 @@ void Cyber962PPReadMultiple(struct Cyber962PP *processor, CyberWord16 address, C
     assert(processor != NULL);
     assert(buffer != NULL);
 
-    if (address + (count - 1) > address) {
-        // Address didn't wrap, example: (0xFFFF + (1 - 1)) == 0xFFFF
-        memcpy(buffer, &processor->_storage[address], count * sizeof(CyberWord16));
-    } else {
-        // Address did wrap, split into two copies.
-        // FIXME: Split read into two copies
+    // Instead of using memcpy, use a loop to get wrapping.
+    for (CyberWord16 i = 0; i < count; i++) {
+        buffer[i] = processor->_storage[address + i];
     }
 }
 
@@ -107,13 +108,24 @@ void Cyber962PPWriteMultiple(struct Cyber962PP *processor, CyberWord16 address, 
     assert(processor != NULL);
     assert(buffer != NULL);
 
-    if (address + (count - 1) > address) {
-        // Address didn't wrap, example: (0xFFFF + (1 - 1)) == 0xFFFF
-        memcpy(&processor->_storage[address], buffer, count * sizeof(CyberWord16));
-    } else {
-        // Address did wrap, split into two copies.
-        // FIXME: Split write into two copies
+    // Instead of using memcpy, use a loop to get wrapping.
+    for (CyberWord16 i = 0; i < count; i++) {
+        processor->_storage[address + i] = buffer[i];
     }
+}
+
+
+void Cyber962PPSingleStep(struct Cyber962PP *processor)
+{
+    assert(processor != NULL);
+
+    CyberWord16 oldP = processor->_regP;
+    union Cyber962PPInstructionWord instructionWord;
+    instructionWord._raw = Cyber962PPReadSingle(processor, oldP);
+    Cyber962PPInstruction instruction = Cyber962PPInstructionDecode(processor, instructionWord, oldP);
+    CyberWord16 advance = instruction(processor, instructionWord);
+    CyberWord16 newP = oldP + advance;
+    instructionWord._raw = newP;
 }
 
 

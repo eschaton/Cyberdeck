@@ -28,14 +28,17 @@ struct Cyber962PP {
 
     // Registers
 
-    /// Arithmetic Register
+    /// Arithmetic Register, 18 bits
     CyberWord18 _regA;
 
-    /// Program Address Register (program counter)
+    /// Program Address Register (program counter), 16 bits
     CyberWord16 _regP;
 
-    /// Relocation Register
+    /// Relocation Register, 22 bits
     CyberWord32 _regR;
+
+    /// Instruction cache.
+    void **_instructionCache;
 
     // FIXME: Flesh out.
 };
