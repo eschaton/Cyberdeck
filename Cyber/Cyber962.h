@@ -22,7 +22,6 @@
 #ifndef __CYBER_CYBER962_H__
 #define __CYBER_CYBER962_H__
 
-
 CYBER_HEADER_BEGIN
 
 
@@ -64,6 +63,5 @@ CYBER_EXPORT struct Cyber962IOU * _Nullable Cyber962GetInputOutputUnit(struct Cy
 
 
 CYBER_HEADER_END
-
 
 #endif /* __CYBER_CYBER962_H__ */

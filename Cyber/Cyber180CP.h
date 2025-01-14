@@ -22,7 +22,6 @@
 #ifndef __CYBER_CYBER180CP_H__
 #define __CYBER_CYBER180CP_H__
 
-
 CYBER_HEADER_BEGIN
 
 
@@ -45,6 +44,5 @@ CYBER_EXPORT void Cyber180CPDispose(struct Cyber180CP * _Nullable cp);
 
 
 CYBER_HEADER_END
-
 
 #endif /* __CYBER_CYBER180CP_H__ */

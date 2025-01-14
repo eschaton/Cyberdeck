@@ -19,8 +19,8 @@
 
 #include <Cyber/CyberTypes.h>
 
-#ifndef __CYBER_CYBER962PPInstructions_H__
-#define __CYBER_CYBER962PPInstructions_H__
+#ifndef __CYBER_CYBER962PPINSTRUCTIONS_H__
+#define __CYBER_CYBER962PPINSTRUCTIONS_H__
 
 CYBER_HEADER_BEGIN
 
@@ -70,4 +70,4 @@ CYBER_EXPORT Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct 
 
 CYBER_HEADER_END
 
-#endif /* __CYBER_CYBER962PPInstructions_H__ */
+#endif /* __CYBER_CYBER962PPINSTRUCTIONS_H__ */

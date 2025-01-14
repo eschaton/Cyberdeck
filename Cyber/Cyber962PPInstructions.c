@@ -799,7 +799,65 @@ CyberWord16 Cyber962PPInstruction_SCN(struct Cyber962PP *processor, union Cyber9
 /// Implementation of "Replace Add" instructions.
 CyberWord16 Cyber962PPInstruction_RAx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    // TODO: Implement RAx instructions.
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+    CyberWord16 d16 = instructionWord._d.d;
+
+    switch (opcode) {
+        case 00035: { // RAD (d)
+            CyberWord18 addend = Cyber962PPReadSingle(processor, d16) & 0x0FFF;
+            CyberWord18 newA = (processor->_regA + addend) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 01035: { // RADL (d)
+            CyberWord18 addend = Cyber962PPReadSingle(processor, d16) & 0xFFFF;
+            CyberWord18 newA = (processor->_regA + addend) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 00045: { // RAI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = (processor->_regA + addend) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 01045: { // RAIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = (processor->_regA + addend) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+        } break;
+
+        case 00055: { // RAM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = (processor->_regA + addend) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 2;
+        } break;
+
+        case 01055: { // RAML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = (processor->_regA + addend) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
 
     return 0;
 }
@@ -807,7 +865,66 @@ CyberWord16 Cyber962PPInstruction_RAx(struct Cyber962PP *processor, union Cyber9
 /// Implementation of "Replace Add One" instructions.
 CyberWord16 Cyber962PPInstruction_AOx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    // TODO: Implement AOx instructions.
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+    CyberWord16 d16 = instructionWord._d.d;
+
+    switch (opcode) {
+        case 00036: { // AOD (d)
+            CyberWord18 addend = Cyber962PPReadSingle(processor, d16) & 0x0FFF;
+            CyberWord18 newA = (1 + addend) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 01036: { // AODL (d)
+            CyberWord18 addend = Cyber962PPReadSingle(processor, d16) & 0xFFFF;
+            CyberWord18 newA = (1 + addend) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 00046: { // AOI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = (1 + addend) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 01046: { // AOIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = (1 + addend) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 00056: { // AOM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = (1 + addend) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 2;
+        } break;
+
+        case 01056: { // AOML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, d16);
+            CyberWord18 addend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = (1 + addend) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
 
     return 0;
 }
@@ -815,7 +932,66 @@ CyberWord16 Cyber962PPInstruction_AOx(struct Cyber962PP *processor, union Cyber9
 /// Implementation of "Replace Subtract One" instructions.
 CyberWord16 Cyber962PPInstruction_SOx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    // TODO: Implement SOx instructions.
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+    CyberWord16 d16 = instructionWord._d.d;
+
+    switch (opcode) {
+        case 00037: { // SOD (d)
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, d16) & 0x0FFF;
+            CyberWord18 newA = (subtractend - 1) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 01037: { // SODL (d)
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, d16) & 0xFFFF;
+            CyberWord18 newA = (subtractend - 1) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 00047: { // SOI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, d16);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = (subtractend - 1) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 01047: { // SOIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, d16);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = (subtractend - 1) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 1;
+        } break;
+
+        case 00057: { // SOM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, d16);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            CyberWord18 newA = (subtractend - 1) & 0x0FFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 2;
+        } break;
+
+        case 01057: { // SOML (d+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, d16);
+            CyberWord18 subtractend = Cyber962PPReadSingle(processor, address) & 0xFFFF;
+            CyberWord18 newA = (subtractend - 1) & 0xFFFF;
+            processor->_regA = newA;
+            Cyber962PPWriteSingle(processor, d16, newA);
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
 
     return 0;
 }
@@ -895,7 +1071,6 @@ CyberWord16 Cyber962PPInstruction_xJN(struct Cyber962PP *processor, union Cyber9
 /// Implementation of "Load/Store R" instructions.
 CyberWord16 Cyber962PPInstruction_xRD(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    // TODO: Implement Load/Store R instructions.
     CyberWord12 opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     CyberWord6 d = instructionWord._d.d;
@@ -933,6 +1108,15 @@ CyberWord16 Cyber962PPInstruction_CRx(struct Cyber962PP *processor, union Cyber9
 {
     // TODO: Implement Central Read instructions.
 
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
@@ -940,6 +1124,15 @@ CyberWord16 Cyber962PPInstruction_CRx(struct Cyber962PP *processor, union Cyber9
 CyberWord16 Cyber962PPInstruction_RDxL(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
     // TODO: Implement Central Read with Lock instructions.
+
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
 
     return 0;
 }
@@ -949,6 +1142,15 @@ CyberWord16 Cyber962PPInstruction_CWx(struct Cyber962PP *processor, union Cyber9
 {
     // TODO: Implement Central Write instructions.
 
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
@@ -956,6 +1158,15 @@ CyberWord16 Cyber962PPInstruction_CWx(struct Cyber962PP *processor, union Cyber9
 CyberWord16 Cyber962PPInstruction_IOJ(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
     // TODO: Implement I/O Jump instructions.
+
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
 
     return 0;
 }
@@ -965,6 +1176,15 @@ CyberWord16 Cyber962PPInstruction_IN(struct Cyber962PP *processor, union Cyber96
 {
     // TODO: Implement I/O Input instructions.
 
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
@@ -973,6 +1193,15 @@ CyberWord16 Cyber962PPInstruction_OUT(struct Cyber962PP *processor, union Cyber9
 {
     // TODO: Implement I/O Output instructions.
 
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
     return 0;
 }
 
@@ -980,6 +1209,15 @@ CyberWord16 Cyber962PPInstruction_OUT(struct Cyber962PP *processor, union Cyber9
 CyberWord16 Cyber962PPInstruction_CTRL(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
     // TODO: Implement I/O Control instructions.
+
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
 
     return 0;
 }
@@ -1036,7 +1274,7 @@ CyberWord16 Cyber962PPInstruction_MAN2(struct Cyber962PP *processor, union Cyber
 /// Implementation of "Interrupt Processor" instruction.
 CyberWord16 Cyber962PPInstruction_INPN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    // TODO: Implement Interrupt instruction.
+    // TODO: Implement Interrupt Processor instruction.
 
     return 1;
 }

@@ -22,6 +22,8 @@
 #ifndef __CYBER_CYBER962IOU_H__
 #define __CYBER_CYBER962IOU_H__
 
+CYBER_HEADER_BEGIN
+
 
 struct Cyber962;
 struct Cyber962IOU;
@@ -42,6 +44,8 @@ CYBER_EXPORT struct Cyber962IOU * _Nullable Cyber962IOUCreate(struct Cyber962 * 
 /// Dispose of a Cyber180CM.
 CYBER_EXPORT void Cyber962IOUDispose(struct Cyber962IOU * _Nullable cm);
 
+
+CYBER_HEADER_END
 
 #endif /* __CYBER_CYBER180CM_H__ */
 

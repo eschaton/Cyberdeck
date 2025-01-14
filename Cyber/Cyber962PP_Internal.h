@@ -38,7 +38,7 @@ struct Cyber962PP {
     CyberWord32 _regR;
 
     /// Instruction cache.
-    void **_instructionCache;
+    void * _Nullable * _Nullable _instructionCache;
 
     // FIXME: Flesh out.
 };
