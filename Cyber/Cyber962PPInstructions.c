@@ -19,29 +19,57 @@
 
 #include "Cyber962PPInstructions_Internal.h"
 
-#include <Cyber/Cyber962PP.h>
+#include "Cyber962PP_Internal.h"
+
+#include <assert.h>
 
 
 CYBER_SOURCE_BEGIN
 
 
-/// A Cyber 962 Peripheral Processor instruction word is a bit field.
-union Cyber962PPInstructionWord {
-    CyberWord16 _raw;
-    struct PPFormat_d {
-        unsigned g : 1;
-        unsigned e : 3;
-        unsigned f : 6;
-        unsigned d : 6;
-    } _d;
-    struct PPFormat_sc {
-        unsigned g : 1;
-        unsigned e : 3;
-        unsigned f : 6;
-        unsigned s : 1;
-        unsigned c : 5;
-    } _sc;
-};
+/// Get the combined `dm` value as an 18-bit quantity.
+static inline CyberWord18 Cyber962PPInstruction_dm(union Cyber962PPInstructionWord instructionWord, CyberWord16 word2)
+{
+    CyberWord18 result = 0;
+    result |= (instructionWord._d.d & 0x00000003F) << 12;
+    result |= (word2 & 0xFFF);
+    return result;
+}
+
+
+/// Compute an address for the Indirect address mode `((d))`
+///
+/// To compute an address for the Indirect address mode, the address to use is located at the address pointed to by `d`.
+static inline CyberWord16 Cyber962PPComputeIndirectAddress(struct Cyber962PP *processor, CyberWord6 d)
+{
+    CyberWord16 intermediateAddress = Cyber962PPReadSingle(processor, d);
+    CyberWord16 address = Cyber962PPReadSingle(processor, intermediateAddress);
+    return address;
+}
+
+
+/// Compute an address for the Memory address mode `(m+(d))`.
+///
+/// "Memory" mode is what most other processors refer to as "indexed" mode, and uses the `d` and `m` fields to compose the address of a 12-bit or 16-bit word in memory, according to the following rules:
+///
+/// 1. If `d` is `0`, the operand address  is the address to use.
+/// 2. If `d` is nonzero, `d` is the address of a 12-bit word that is added to `m` to generate an address.
+///
+/// - Note: This may access memory.
+static inline CyberWord16 Cyber962PPComputeMemoryAddress(struct Cyber962PP *processor, CyberWord6 d)
+{
+    CyberWord16 address;
+
+    if (d == 0) {
+        address = processor->_regP;
+    } else {
+        CyberWord16 m = Cyber962PPReadSingle(processor, processor->_regP + 1);
+        CyberWord16 index = Cyber962PPReadSingle(processor, d);
+        address = m + index;
+    }
+
+    return address;
+}
 
 
 Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *processor, CyberWord16 word, CyberWord16 address)
@@ -173,36 +201,50 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
 
         case 00024: // LRD d
         case 00025: // SRD d
+            return Cyber962PPInstruction_xRD;
+
         case 00060: // CRD (A),d
         case 01060: // CRDL (A),d
         case 00061: // CRM (d),(A),m
         case 01061: // CRML (d),(A),m
+            return Cyber962PPInstruction_CRx;
+
         case 01000: // RDSL d,(A)
         case 01001: // RDCL d,(A)
+            return Cyber962PPInstruction_RDxL;
+
         case 00062: // CWD (A),(d)
         case 01062: // CWDL (A),d
         case 00063: // CWM (d),(A),m
         case 01063: // CWML (d),(A),m
+            return Cyber962PPInstruction_CWx;
 
             // Input/Output Instructions
             // FIXME: Add functions for these
 
-        case 00064: // AJM c,m || SCF c,m
+        case 00064: // AJM c,m || SCF c,m (s)
         case 01064: // FSJM c,m
-        case 00065: // IJM c,m || CCF c,m
+        case 00065: // IJM c,m || CCF c,m (s)
         case 01065: // FCJM c,m
-        case 00066: // FJM c,m || SFM c,m
-        case 00067: // EJM c,m || CFM c,m
+        case 00066: // FJM c,m || SFM c,m (s)
+        case 00067: // EJM c,m || CFM c,m (s)
+            return (instructionWord._sc.s) ? Cyber962PPInstruction_CTRL : Cyber962PPInstruction_IOJ;
+
         case 00070: // IANW c || IANI c
         case 00071: // IAM c,m
         case 01071: // IAPM c,m
+            return Cyber962PPInstruction_IN;
+
         case 00072: // OANW c || OANI c
         case 00073: // OAM c,m
         case 01073: // OAPM c,m
+            return Cyber962PPInstruction_OUT;
+
         case 00074: // ACNW c || ACNU c
         case 00075: // DCNW c || DCNU c
         case 00076: // FANW c || FANI c
         case 00077: // FNCW c || FNCI c
+            return Cyber962PPInstruction_CTRL;
 
             // Other IOU Instructions
 
@@ -269,117 +311,272 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
                     return Cyber962PPInstruction_MAN2;
 
                 default: // none
+                    assert(false); // Unknown instruction
                     return NULL;
             }
         } break;
         case 01026: // INPN d
             return Cyber962PPInstruction_INPN;
-    }
 
-    return NULL;
+        default: // none
+            assert(false); // Unknown instruction
+            return NULL;
+    }
 }
 
 
 // MARK: - Instruction Implementations
 
-bool Cyber962PPInstruction_LDx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_LDx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    CyberWord12 opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00014: { // LDN d
+            processor->_regA = instructionWord._d.d;
+            return 1;
+        } break;
+
+        case 00015: { // LCN d
+            CyberWord18 newA = 0x3FFC0 | ~instructionWord._d.d;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00020: { // LDC d,m
+            CyberWord16 m = Cyber962PPReadSingle(processor, processor->_regP + 1);
+            CyberWord18 newA = Cyber962PPInstruction_dm(instructionWord, m);
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 00030: { // LDD (d)
+            CyberWord16 d16 = instructionWord._d.d;
+            CyberWord18 newA = Cyber962PPReadSingle(processor, d16) & 0x0FFF;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01030: { // LDDL (d)
+            CyberWord16 d16 = instructionWord._d.d;
+            CyberWord18 newA = Cyber962PPReadSingle(processor, d16);
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00040: { // LDI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 01040: { // LDIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, address);
+            processor->_regA = newA;
+            return 1;
+        } break;
+
+        case 00050: { // LDM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, address) & 0x0FFF;
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        case 01050: { // LDML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord18 newA = Cyber962PPReadSingle(processor, address);
+            processor->_regA = newA;
+            return 2;
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
+    return 0;
 }
 
-bool Cyber962PPInstruction_STx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_STx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+
+    switch (opcode) {
+        case 00034: { // STD (d)
+            CyberWord16 address = instructionWord._d.d;
+            CyberWord16 newValue = processor->_regA & 0x00FFF;
+            Cyber962PPWriteSingle(processor, address, newValue);
+        } break;
+
+        case 01034: { // STDL (d)
+            CyberWord16 address = instructionWord._d.d;
+            CyberWord16 newValue = processor->_regA & 0x0FFFF;
+            Cyber962PPWriteSingle(processor, address, newValue);
+        } break;
+
+        case 00044: { // STI ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord16 newValue = processor->_regA & 0x00FFF;
+            Cyber962PPWriteSingle(processor, address, newValue);
+        } break;
+
+        case 01044: { // STIL ((d))
+            CyberWord16 address = Cyber962PPComputeIndirectAddress(processor, instructionWord._d.d);
+            CyberWord16 newValue = processor->_regA & 0x0FFFF;
+            Cyber962PPWriteSingle(processor, address, newValue);
+        } break;
+
+        case 00054: { // STM (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord16 newValue = processor->_regA & 0x00FFF;
+            Cyber962PPWriteSingle(processor, address, newValue);
+        } break;
+
+        case 01054: { // STML (m+(d))
+            CyberWord16 address = Cyber962PPComputeMemoryAddress(processor, instructionWord._d.d);
+            CyberWord16 newValue = processor->_regA & 0x0FFFF;
+            Cyber962PPWriteSingle(processor, address, newValue);
+        } break;
+
+        default:
+            assert(false); // should be unreachable
+            break;
+    }
+
+    return 0;
 }
 
-bool Cyber962PPInstruction_ADx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_ADx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_SBx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_SBx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_SHN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_SHN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_LMx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_LMx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_LPx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_LPx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_SCN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_SCN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_RAx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_RAx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_AOx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_AOx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_SOx(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_SOx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_xJM(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_xJM(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_xJN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_xJN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_PSN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_xRD(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_KPT(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_CRx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_EXN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_RDxL(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_MXN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_CWx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_MAN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_IOJ(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_MAN2(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_IN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
 }
 
-bool Cyber962PPInstruction_INPN(struct Cyber962PP *processor, CyberWord16 word)
+CyberWord16 Cyber962PPInstruction_OUT(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    return true;
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_CTRL(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_PSN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_KPT(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_EXN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_MXN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_MAN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_MAN2(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
+}
+
+CyberWord16 Cyber962PPInstruction_INPN(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
+{
+    return 0;
 }
 
 

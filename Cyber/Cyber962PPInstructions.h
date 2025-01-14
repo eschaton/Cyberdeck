@@ -28,14 +28,33 @@ CYBER_HEADER_BEGIN
 struct Cyber962PP;
 
 
+/// A Cyber 962 Peripheral Processor instruction word is a bit field.
+union Cyber962PPInstructionWord {
+    CyberWord16 _raw;
+    struct PPFormat_d {
+        unsigned g : 1;
+        unsigned e : 3;
+        unsigned f : 6;
+        unsigned d : 6;
+    } _d;
+    struct PPFormat_sc {
+        unsigned g : 1;
+        unsigned e : 3;
+        unsigned f : 6;
+        unsigned s : 1;
+        unsigned c : 5;
+    } _sc;
+};
+
+
 /// The type of an instruction implementation.
 ///
 /// - Parameters:
 ///   - processor: The state for this Peripheral Processor at the start of instruction execution.
 ///   - word: The instruction word itself, for field recovery.
 ///
-/// - Returns: `true` to auto-increment `_regP`, `false` if the instruction implementation changes `_regP` itself.
-typedef bool (*Cyber962PPInstruction)(struct Cyber962PP *processor, CyberWord16 word);
+/// - Returns: The amount by which to increment `P` after the instruction completes.
+typedef CyberWord16 (*Cyber962PPInstruction)(struct Cyber962PP *processor, union Cyber962PPInstructionWord word);
 
 
 /// Decode the instruction at the given address.

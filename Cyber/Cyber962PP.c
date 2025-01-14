@@ -17,40 +17,14 @@
 //  limitations under the License.
 //
 
-#include <Cyber/Cyber962PP.h>
+#include "Cyber962PP_Internal.h"
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 CYBER_SOURCE_BEGIN
-
-
-/// A Cyber962PP implements a Cyber 962 Peripheral Processor.
-struct Cyber962PP {
-
-    /// The Input/Output Unit that this is a part of.
-    struct Cyber962IOU *_inputOutputUnit;
-
-    /// Index of this Peripheral Processor in the Input/Output Unit.
-    int _index;
-
-    /// The memory for this Peripheral Processor.
-    CyberWord16 *_storage;
-
-    // Registers
-
-    /// Arithmetic Register
-    CyberWord18 _regA;
-
-    /// Program Address Register (program counter)
-    CyberWord16 _regP;
-
-    /// Relocation Register
-    CyberWord32 _regR;
-
-    // FIXME: Flesh out.
-};
 
 
 struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUnit, int index)
@@ -89,6 +63,14 @@ void Cyber962PPReset(struct Cyber962PP *pp)
 }
 
 
+int Cyber962PPGetBarrel(struct Cyber962PP *processor)
+{
+    assert(processor != NULL);
+
+    return processor->_index % 5;
+}
+
+
 CyberWord16 Cyber962PPReadSingle(struct Cyber962PP *processor, CyberWord16 address)
 {
     assert(processor != NULL);
@@ -97,11 +79,41 @@ CyberWord16 Cyber962PPReadSingle(struct Cyber962PP *processor, CyberWord16 addre
 }
 
 
+void Cyber962PPReadMultiple(struct Cyber962PP *processor, CyberWord16 address, CyberWord16 *buffer, CyberWord16 count)
+{
+    assert(processor != NULL);
+    assert(buffer != NULL);
+
+    if (address + (count - 1) > address) {
+        // Address didn't wrap, example: (0xFFFF + (1 - 1)) == 0xFFFF
+        memcpy(buffer, &processor->_storage[address], count * sizeof(CyberWord16));
+    } else {
+        // Address did wrap, split into two copies.
+        // FIXME: Split read into two copies
+    }
+}
+
+
 void Cyber962PPWriteSingle(struct Cyber962PP *processor, CyberWord16 address, CyberWord16 value)
 {
     assert(processor != NULL);
 
     processor->_storage[address] = value;
+}
+
+
+void Cyber962PPWriteMultiple(struct Cyber962PP *processor, CyberWord16 address, CyberWord16 *buffer, CyberWord16 count)
+{
+    assert(processor != NULL);
+    assert(buffer != NULL);
+
+    if (address + (count - 1) > address) {
+        // Address didn't wrap, example: (0xFFFF + (1 - 1)) == 0xFFFF
+        memcpy(&processor->_storage[address], buffer, count * sizeof(CyberWord16));
+    } else {
+        // Address did wrap, split into two copies.
+        // FIXME: Split write into two copies
+    }
 }
 
 
