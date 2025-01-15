@@ -19,6 +19,8 @@
 
 #include <Cyber/Cyber180CP.h>
 
+#include <Cyber/Cyber180CMPort.h>
+
 #include <assert.h>
 #include <stdlib.h>
 
@@ -44,6 +46,9 @@ struct Cyber180CP {
 
     /// Index of this Cyber 180 Central Processor within the system.
     int _index;
+
+    /// The port that this Central Processor can use to access Central Memory.
+    struct Cyber180CMPort *_centralMemoryPort;
 
     // Registers
 
@@ -72,6 +77,24 @@ void Cyber180CPDispose(struct Cyber180CP * _Nullable cp)
     if (cp == NULL) return;
 
     free(cp);
+}
+
+
+struct Cyber180CMPort * _Nonnull Cyber180CPGetCentralMemoryPort(struct Cyber180CP *cp)
+{
+    assert(cp != NULL);
+
+    return cp->_centralMemoryPort;
+}
+
+
+void Cyber180CPSetCentralMemoryPort(struct Cyber180CP *cp, struct Cyber180CMPort *port)
+{
+    assert(cp != NULL);
+    assert(port != NULL);
+    assert(cp->_centralMemoryPort == NULL);
+
+    cp->_centralMemoryPort = port;
 }
 
 

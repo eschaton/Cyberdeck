@@ -19,9 +19,13 @@
 
 #include "Cyber962PPInstructions_Internal.h"
 
+#include <Cyber/Cyber180CMPort.h>
+#include <Cyber/Cyber962IOU.h>
+
 #include "Cyber962PP_Internal.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 
 CYBER_SOURCE_BEGIN
@@ -71,6 +75,13 @@ static inline CyberWord16 Cyber962PPComputeMemoryAddress(struct Cyber962PP *proc
     }
 
     return address;
+}
+
+
+/// Compute an address in the Central Memory using `A` and `R`.
+static inline CyberWord48 Cyber962PPComputeCentralMemoryAddress(struct Cyber962PP *processor)
+{
+    return 0;//xxx
 }
 
 
@@ -342,7 +353,7 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
 
                 default: // none
                     assert(false); // Unknown instruction
-                    instruction = NULL;
+                    instruction = Cyber962PPInstruction_PSN;
                     break;
             }
         } break;
@@ -352,7 +363,7 @@ Cyber962PPInstruction _Nullable Cyber962PPInstructionDecode(struct Cyber962PP *p
 
         default: // none
             assert(false); // Unknown instruction
-            instruction = NULL;
+            instruction = Cyber962PPInstruction_PSN;
             break;
     }
 
@@ -1103,14 +1114,79 @@ CyberWord16 Cyber962PPInstruction_xRD(struct Cyber962PP *processor, union Cyber9
     return 1;
 }
 
+/// Copy the given 64-bit (well, 60-bit) CM word
+static inline void Cyber962PPInstruction_WriteCMWordToPPM12(struct Cyber962PP *processor, CyberWord64 word, CyberWord16 ppmAddress)
+{
+    CyberWord16 word12[5] = {0};
+    word12[0] = (word >> 48) & 0x0FFF;
+    word12[1] = (word >> 36) & 0x0FFF;
+    word12[2] = (word >> 24) & 0x0FFF;
+    word12[3] = (word >> 12) & 0x0FFF;
+    word12[4] = (word >>  0) & 0x0FFF;
+    Cyber962PPWriteMultiple(processor, ppmAddress, word12, 5);
+}
+
+static inline void Cyber962PPInstruction_WriteCMWordToPPM16(struct Cyber962PP *processor, CyberWord64 word, CyberWord16 ppmAddress)
+{
+    CyberWord16 word16[4] = {0};
+    word16[0] = (word >> 48) & 0xFFFF;
+    word16[1] = (word >> 32) & 0xFFFF;
+    word16[2] = (word >> 16) & 0xFFFF;
+    word16[3] = (word >>  0) & 0xFFFF;
+    Cyber962PPWriteMultiple(processor, ppmAddress, word16, 4);
+}
+
 /// Implementation of "Central Read" instructions.
 CyberWord16 Cyber962PPInstruction_CRx(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
     // TODO: Implement Central Read instructions.
 
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
+    CyberWord16 d16 = instructionWord._d.d;
+    struct Cyber180CMPort *port = Cyber962IOUGetCentralMemoryPort(processor->_inputOutputUnit);
 
     switch (opcode) {
+        case 00060: { // CRD (A),d
+            CyberWord48 cmAddress = Cyber962PPComputeCentralMemoryAddress(processor);
+            CyberWord64 word;
+            Cyber180CMPortReadWordsPhysical(port, cmAddress, &word, 1);
+            Cyber962PPInstruction_WriteCMWordToPPM12(processor, word & 0x0FFFFFFFFFFFFFFF, d16);
+            return 1;
+        } break;
+
+        case 01060: { // CRDL (A),d
+            CyberWord48 cmAddress = Cyber962PPComputeCentralMemoryAddress(processor);
+            CyberWord64 word;
+            Cyber180CMPortReadWordsPhysical(port, cmAddress, &word, 1);
+            Cyber962PPInstruction_WriteCMWordToPPM16(processor, word & 0xFFFFFFFFFFFFFFFF, d16);
+            return 1;
+        } break;
+
+        case 00061: { // CRM (d),(A),m
+            CyberWord48 cmAddress = Cyber962PPComputeCentralMemoryAddress(processor);
+            CyberWord16 m = Cyber962PPReadSingle(processor, processor->_regP + 1);
+            CyberWord12 count = Cyber962PPReadSingle(processor, d16) & 0x0FFF;
+            CyberWord64 *buffer = calloc(count, sizeof(CyberWord64));
+            Cyber180CMPortReadWordsPhysical(port, cmAddress, buffer, count);
+            for (CyberWord12 i = 0; i < count; i++) {
+                Cyber962PPInstruction_WriteCMWordToPPM12(processor, buffer[i] & 0x0FFFFFFFFFFFFFFF, m + (5 * i));
+            }
+            free(buffer);
+            return 2;
+        } break;
+
+        case 01061: { // CRML (d),(A),m
+            CyberWord48 cmAddress = Cyber962PPComputeCentralMemoryAddress(processor);
+            CyberWord16 m = Cyber962PPReadSingle(processor, processor->_regP + 1);
+            CyberWord16 count = Cyber962PPReadSingle(processor, d16) & 0xFFFF;
+            CyberWord64 *buffer = calloc(count, sizeof(CyberWord64));
+            Cyber180CMPortReadWordsPhysical(port, cmAddress, buffer, count);
+            for (CyberWord12 i = 0; i < count; i++) {
+                Cyber962PPInstruction_WriteCMWordToPPM16(processor, buffer[i] & 0xFFFFFFFFFFFFFFFF, m + (4 * i));
+            }
+            free(buffer);
+            return 2;
+        } break;
 
         default:
             assert(false); // should be unreachable
@@ -1128,6 +1204,11 @@ CyberWord16 Cyber962PPInstruction_RDxL(struct Cyber962PP *processor, union Cyber
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
+        case 01000: { // RDSL d,(A)
+        } break;
+
+        case 01001: { // RDCL d,(A)
+        } break;
 
         default:
             assert(false); // should be unreachable
@@ -1145,6 +1226,17 @@ CyberWord16 Cyber962PPInstruction_CWx(struct Cyber962PP *processor, union Cyber9
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
+        case 00062: { // CWD (A),(d)
+        } break;
+
+        case 01062: { // CWDL (A),d
+        } break;
+
+        case 00063: { // CWM (d),(A),m
+        } break;
+
+        case 01063: { // CWML (d),(A),m
+        } break;
 
         default:
             assert(false); // should be unreachable
@@ -1162,6 +1254,23 @@ CyberWord16 Cyber962PPInstruction_IOJ(struct Cyber962PP *processor, union Cyber9
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
+        case 00064: { // AJM c,m
+        } break;
+
+        case 01064: { // FSJM c,m
+        } break;
+
+        case 00065: { // IJM c,m
+        } break;
+
+        case 01065: { // FCJM c,m
+        } break;
+
+        case 00066: { // FJM c,m
+        } break;
+
+        case 00067: { // EJM c,m
+        } break;
 
         default:
             assert(false); // should be unreachable
@@ -1179,6 +1288,14 @@ CyberWord16 Cyber962PPInstruction_IN(struct Cyber962PP *processor, union Cyber96
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
+        case 00070: { // IANW c || IANI c
+        } break;
+
+        case 00071: { // IAM c,m
+        } break;
+
+        case 01071: { // IAPM c,m
+        } break;
 
         default:
             assert(false); // should be unreachable
@@ -1196,6 +1313,14 @@ CyberWord16 Cyber962PPInstruction_OUT(struct Cyber962PP *processor, union Cyber9
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
+        case 00072: { // OANW c || OANI c
+        } break;
+
+        case 00073: { // OAM c,m
+        } break;
+
+        case 01073: { // OAPM c,m
+        } break;
 
         default:
             assert(false); // should be unreachable
@@ -1213,6 +1338,17 @@ CyberWord16 Cyber962PPInstruction_CTRL(struct Cyber962PP *processor, union Cyber
     uint16_t opcode = instructionWord._d.f | (instructionWord._d.g << 9);
 
     switch (opcode) {
+        case 00074: { // ACNW c || ACNU c
+        } break;
+
+        case 00075: { // DCNW c || DCNU c
+        } break;
+
+        case 00076: { // FANW c || FANI c
+        } break;
+
+        case 00077: { // FNCW c || FNCI c
+        } break;
 
         default:
             assert(false); // should be unreachable

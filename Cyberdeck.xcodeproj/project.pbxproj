@@ -77,13 +77,15 @@
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		9F2422502D34AA3400506BC6 /* Exceptions for "Cyber" folder in "Cyber" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			publicHeaders = (
+			privateHeaders = (
 				Cyber.h,
 				Cyber180CM.h,
+				Cyber180CMPort.h,
 				Cyber180CP.h,
 				Cyber962.h,
 				Cyber962IOU.h,
 				Cyber962PP.h,
+				Cyber962PPInstructions.h,
 				CyberDefines.h,
 				CyberTypes.h,
 			);

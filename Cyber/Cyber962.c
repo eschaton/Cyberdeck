@@ -72,25 +72,31 @@ struct Cyber962 * _Nullable Cyber962Create(const char *identifier, size_t memory
     assert((centralProcessors > 0) && (centralProcessors <= 1));
     assert((inputOutputUnits > 0) && (inputOutputUnits <= 3));
 
-    // Create the system components.
+    // Create the system components and connect them together.
 
     struct Cyber962 *system = calloc(0, sizeof(struct Cyber962));
 
     system->_identifier = strdup(identifier);
 
-    system->_centralMemory = Cyber180CMCreate(system, memorySize);
+    int portCount = centralProcessors + inputOutputUnits;
+    struct Cyber180CM *centralMemory = Cyber180CMCreate(system, memorySize, portCount);
+    system->_centralMemory = centralMemory;
 
     for (int cp = 0; cp < centralProcessors; cp++) {
-        system->_centralProcessors[cp] = Cyber180CPCreate(system, cp);
+        struct Cyber180CP *centralProcessor = Cyber180CPCreate(system, cp);
+        system->_centralProcessors[cp] = centralProcessor;
+        // FIXME: Connect Central Memory ports to Central Processors
     }
 
+    const int iouPortsBase = centralProcessors;
     for (int iou = 0; iou < inputOutputUnits; iou++) {
-        system->_inputOutputUnits[iou] = Cyber962IOUCreate(system, iou);
+        struct Cyber962IOU *inputOutputUnit = Cyber962IOUCreate(system, iou);
+        struct Cyber180CMPort *centralMemoryPort = Cyber180CMGetPortAtIndex(system->_centralMemory, iouPortsBase + iou);
+        Cyber962IOUSetCentralMemoryPort(inputOutputUnit, centralMemoryPort);
+        system->_inputOutputUnits[iou] = inputOutputUnit;
     }
 
-    // Connect the components together.
-
-    // FIXME: Connect system components.
+    // FIXME: Connect I/O Channels.
 
     return system;
 }
