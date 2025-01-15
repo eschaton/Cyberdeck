@@ -27,6 +27,7 @@
 #include <Cyber/Cyber180CMPort.h>
 #include <Cyber/Cyber180CP.h>
 #include <Cyber/Cyber962.h>
+#include <Cyber/Cyber962IOChannel.h>
 #include <Cyber/Cyber962IOU.h>
 #include <Cyber/Cyber962PP.h>
 #include <Cyber/Cyber962PPInstructions.h>

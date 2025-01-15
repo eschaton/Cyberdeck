@@ -45,7 +45,10 @@ struct Cyber962IOU {
     /// This Input/Output Unit's Central Memory port.
     struct Cyber180CMPort * _Nonnull _centralMemoryPort;
 
-    // FIXME: Flesh out.
+    /// The Input/Output Unit's Input/Output Channels.
+    struct Cyber962IOChannel * _Nonnull _inputOutputChannels[20];
+
+    // TODO: Flesh out.
 };
 
 
