@@ -19,6 +19,9 @@
 
 #include <Cyber/Cyber962PP.h>
 
+#include <stdbool.h>
+#include <pthread.h>
+
 #ifndef __CYBER_CYBER962PP_INTERNAL_H__
 #define __CYBER_CYBER962PP_INTERNAL_H__
 
@@ -36,6 +39,18 @@ struct Cyber962PP {
 
     /// The memory for this Peripheral Processor.
     CyberWord16 *_storage;
+
+    /// The thread this Peripheral Processor runs on.
+    pthread_t _thread;
+
+    /// The lock for external access to this Peripheral Processor.
+    pthread_mutex_t _lock;
+
+    /// The condition for starting this Peripheral Processor's thread.
+    pthread_cond_t _condition;
+
+    /// Whether the Peripheral Processor is running.
+    bool _running;
 
     // Registers
 

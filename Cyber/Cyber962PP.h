@@ -46,6 +46,12 @@ CYBER_EXPORT void Cyber962PPDispose(struct Cyber962PP * _Nullable pp);
 /// Reset the given Cyber 962 Peripheral Processor.
 CYBER_EXPORT void Cyber962PPReset(struct Cyber962PP *pp);
 
+/// Start the Peripheral Processor.
+CYBER_EXPORT void Cyber962PPStart(struct Cyber962PP *pp);
+
+/// Stop the Peripheral Processor.
+CYBER_EXPORT void Cyber962PPStart(struct Cyber962PP *pp);
+
 
 CYBER_HEADER_END
 
