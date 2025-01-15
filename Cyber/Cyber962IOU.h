@@ -25,8 +25,10 @@
 CYBER_HEADER_BEGIN
 
 
+struct Cyber180CMPort;
 struct Cyber962;
 struct Cyber962IOU;
+struct Cyber962PP;
 
 
 /// Create a Cyber 962 Input/Output Unit connected to a system.
@@ -41,8 +43,22 @@ struct Cyber962IOU;
 CYBER_EXPORT struct Cyber962IOU * _Nullable Cyber962IOUCreate(struct Cyber962 * _Nonnull system, int index);
 
 
-/// Dispose of a Cyber180CM.
-CYBER_EXPORT void Cyber962IOUDispose(struct Cyber962IOU * _Nullable cm);
+/// Dispose of a Cyber962IOU.
+CYBER_EXPORT void Cyber962IOUDispose(struct Cyber962IOU * _Nullable iou);
+
+
+/// Gets the Cyber 962 Peripheral Processor at the given index.
+///
+/// - Note: An IOU is assumed to be fully-populated, thus there's no need to figure out how many Peripheral Processors or channels it supports.
+CYBER_EXPORT struct Cyber962PP * _Nonnull Cyber962IOUGetPeripheralProcessor(struct Cyber962IOU *iou, int index);
+
+
+/// Gets the Central Memory port that can be used by this IOU to access the Central Memory.
+CYBER_EXPORT struct Cyber180CMPort * _Nonnull Cyber962IOUGetCentralMemoryPort(struct Cyber962IOU *iou);
+
+/// Sets the Central Memory port that this IOU can use to access the Central Memory.
+CYBER_EXPORT void Cyber962IOUSetCentralMemoryPort(struct Cyber962IOU *iou, struct Cyber180CMPort *port);
+
 
 
 CYBER_HEADER_END

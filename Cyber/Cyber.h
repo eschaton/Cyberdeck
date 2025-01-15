@@ -24,10 +24,12 @@
 #include <Cyber/CyberTypes.h>
 
 #include <Cyber/Cyber180CM.h>
+#include <Cyber/Cyber180CMPort.h>
 #include <Cyber/Cyber180CP.h>
 #include <Cyber/Cyber962.h>
 #include <Cyber/Cyber962IOU.h>
 #include <Cyber/Cyber962PP.h>
+#include <Cyber/Cyber962PPInstructions.h>
 
 
 #endif /* __CYBER_CYBER_H__ */

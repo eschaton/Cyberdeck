@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-#include <Cyber/Cyber962IOU.h>
+#include "Cyber962IOU_Internal.h"
 
 #include <Cyber/Cyber962PP.h>
 
@@ -26,27 +26,6 @@
 
 
 CYBER_SOURCE_BEGIN
-
-
-/// A Cyber962IOU implements a Cyber 962 Input/Output Unit.
-///
-/// Each Cyber 962 Input/Output Unit has:
-///
-/// - 5-20 Peripheral Processors
-/// - 5-20 I/O channels
-struct Cyber962IOU {
-
-    /// The system that this is a part of.
-    struct Cyber962 *_system;
-
-    /// Index of this Input/Output Unit in the system.
-    int _index;
-
-    /// This Input/Output Unit's Peripheral Processors.
-    struct Cyber962PP * _Nullable _peripheralProcessors[20];
-
-    // FIXME: Flesh out.
-};
 
 
 struct Cyber962IOU * _Nullable Cyber962IOUCreate(struct Cyber962 * _Nonnull system, int index)
@@ -76,6 +55,33 @@ void Cyber962IOUDispose(struct Cyber962IOU * _Nullable iou)
     }
 
     free(iou);
+}
+
+
+struct Cyber962PP * _Nonnull Cyber962IOUGetPeripheralProcessor(struct Cyber962IOU *iou, int index)
+{
+    assert(iou != NULL);
+    assert((index >= 0) && (index < 20));
+
+    return iou->_peripheralProcessors[index];
+}
+
+
+struct Cyber180CMPort * _Nonnull Cyber962IOUGetCentralMemoryPort(struct Cyber962IOU *iou)
+{
+    assert(iou != NULL);
+
+    return iou->_centralMemoryPort;
+}
+
+
+void Cyber962IOUSetCentralMemoryPort(struct Cyber962IOU *iou, struct Cyber180CMPort *port)
+{
+    assert(iou != NULL);
+    assert(port != NULL);
+    assert(iou->_centralMemoryPort == NULL);
+
+    iou->_centralMemoryPort = port;
 }
 
 

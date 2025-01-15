@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-#include <Cyber/Cyber180CM.h>
+#include "Cyber180CM_Internal.h"
 
-#include <Cyber/CyberTypes.h>
+#include <Cyber/Cyber180CMPort.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -28,37 +28,33 @@
 CYBER_SOURCE_BEGIN
 
 
-/// A Cyber180CM implements a Cyber 180 Central Memory.
-///
-/// The Cyber 180 Central Memory is a 64-bit memory system
-struct Cyber180CM {
-
-    /// The system that this is a part of.
-    struct Cyber962 *_system;
-
-    /// Capacity of the Central Memory.
-    size_t _capacity;
-
-    /// Storage for the Central Memory.
-    CyberWord64 *_storage;
-
-    // FIXME: Flesh out.
-};
-
-
-struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system, size_t capacity)
+struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system, size_t capacity, int ports)
 {
     assert(system != NULL);
     assert(   (capacity == (64 * 1) * 1048576)
            || (capacity == (64 * 2) * 1048576)
            || (capacity == (64 * 3) * 1048576)
            || (capacity == (64 * 4) * 1048576));
+    assert(ports > 2);
 
     struct Cyber180CM *cm = calloc(1, sizeof(struct Cyber180CM));
 
     cm->_system = system;
     cm->_capacity = capacity;
     cm->_storage = calloc(capacity / sizeof(CyberWord64), sizeof(CyberWord64));
+    cm->_portCount = ports;
+    cm->_ports = calloc(ports, sizeof(struct Cyber180CMPort *));
+
+    for (int port = 0; port < ports; port++) {
+        cm->_ports[port] = Cyber180CMPortCreate(cm, port);
+    }
+
+    int err = pthread_mutex_init(&cm->_lock, NULL);
+    if (err != 0) {
+        assert(err != 0); // halt when built for debugging
+        Cyber180CMDispose(cm);
+        return NULL;
+    }
 
     return cm;
 }
@@ -70,7 +66,37 @@ void Cyber180CMDispose(struct Cyber180CM * _Nullable cm)
 
     free(cm->_storage);
 
+    for (int port = 0; port < cm->_portCount; port++) {
+        free(cm->_ports[port]);
+    }
+
+    int err = pthread_mutex_destroy(&cm->_lock);
+    if (err != 0) {
+        assert(err != 0); // halt when built for debugging
+    }
+
     free(cm);
+}
+
+
+struct Cyber180CMPort *Cyber180CMGetPortAtIndex(struct Cyber180CM *cm, int index)
+{
+    assert(cm != NULL);
+    assert(index < cm->_portCount);
+
+    return cm->_ports[index];
+}
+
+
+void Cyber180CMAcquireLock(struct Cyber180CM *cm)
+{
+    pthread_mutex_lock(&cm->_lock);
+}
+
+
+void Cyber180CMRelinquishLock(struct Cyber180CM *cm)
+{
+    pthread_mutex_unlock(&cm->_lock);
 }
 
 

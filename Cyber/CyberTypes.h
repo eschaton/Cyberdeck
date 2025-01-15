@@ -32,6 +32,10 @@ CYBER_HEADER_BEGIN
 typedef uint8_t CyberWord6;
 
 
+/// An 8-bit Cyber word.
+typedef uint8_t CyberWord8;
+
+
 /// A 12-bit Cyber word.
 typedef uint16_t CyberWord12;
 
