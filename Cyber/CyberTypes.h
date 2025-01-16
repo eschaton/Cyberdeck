@@ -48,12 +48,20 @@ typedef uint16_t CyberWord16;
 typedef uint32_t CyberWord18;
 
 
+/// A 22-bit Cyber word.
+typedef uint32_t CyberWord22;
+
+
 /// A 32-bit Cyber word.
 typedef uint32_t CyberWord32;
 
 
 /// A 48-bit Cyber word.
 typedef uint64_t CyberWord48;
+
+
+/// A 60-bit Cyber word.
+typedef uint64_t CyberWord60;
 
 
 /// A 64-bit Cyber word.
