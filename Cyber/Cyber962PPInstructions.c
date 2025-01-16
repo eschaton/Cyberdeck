@@ -673,8 +673,8 @@ CyberWord16 Cyber962PPInstruction_SHN(struct Cyber962PP *processor, union Cyber9
     if (d64 < 040) {
         // Positive is a left shift, circular.
         CyberWord64 left = d64;
-        CyberWord64 shifted = oldA64 << left;
-        // FIXME: Handle circularity.
+        CyberWord64 right = (18 - d64);
+        CyberWord64 shifted = (oldA64 << left) | (oldA64 >> right);
         CyberWord18 newA = shifted & 0x0003FFFF;
         processor->_regA = newA;
     } else {
