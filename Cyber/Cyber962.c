@@ -21,7 +21,7 @@
 
 #include <Cyber/Cyber180CM.h>
 #include <Cyber/Cyber180CP.h>
-#include <Cyber/Cyber962IOU.h>
+#include "Cyber962IOU_Internal.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -78,20 +78,23 @@ struct Cyber962 * _Nullable Cyber962Create(const char *identifier, size_t memory
 
     system->_identifier = strdup(identifier);
 
-    int portCount = centralProcessors + inputOutputUnits;
+    const int portCount = centralProcessors + inputOutputUnits; // total number of Central Memory ports
+    const int cpCMPortsBase = 0; // base index of Central Memory ports for CP instances
+    const int iouCMPortsBase = centralProcessors; // base index of Central Memory ports for IOU instances
+
     struct Cyber180CM *centralMemory = Cyber180CMCreate(system, memorySize, portCount);
     system->_centralMemory = centralMemory;
 
     for (int cp = 0; cp < centralProcessors; cp++) {
         struct Cyber180CP *centralProcessor = Cyber180CPCreate(system, cp);
+        struct Cyber180CMPort *centralMemoryPort = Cyber180CMGetPortAtIndex(system->_centralMemory, cpCMPortsBase + cp);
+        Cyber180CPSetCentralMemoryPort(centralProcessor, centralMemoryPort);
         system->_centralProcessors[cp] = centralProcessor;
-        // FIXME: Connect Central Memory ports to Central Processors
     }
 
-    const int iouPortsBase = centralProcessors;
     for (int iou = 0; iou < inputOutputUnits; iou++) {
         struct Cyber962IOU *inputOutputUnit = Cyber962IOUCreate(system, iou);
-        struct Cyber180CMPort *centralMemoryPort = Cyber180CMGetPortAtIndex(system->_centralMemory, iouPortsBase + iou);
+        struct Cyber180CMPort *centralMemoryPort = Cyber180CMGetPortAtIndex(system->_centralMemory, iouCMPortsBase + iou);
         Cyber962IOUSetCentralMemoryPort(inputOutputUnit, centralMemoryPort);
         system->_inputOutputUnits[iou] = inputOutputUnit;
     }
