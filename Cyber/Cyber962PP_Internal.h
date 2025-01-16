@@ -61,7 +61,7 @@ struct Cyber962PP {
     CyberWord16 _regP;
 
     /// Relocation Register, 22 bits
-    CyberWord32 _regR;
+    CyberWord22 _regR;
 
     /// Instruction cache.
     void * _Nullable * _Nullable _instructionCache;
