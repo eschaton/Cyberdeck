@@ -60,6 +60,10 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
 
     pp->_instructionCache = calloc(65536, sizeof(void *));
 
+    for (int keypoint = 0; keypoint < 64; keypoint++) {
+        pp->_keypoints[keypoint] = 0;
+    }
+
     Cyber962PPReset(pp);
 
     return pp;

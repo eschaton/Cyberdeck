@@ -66,6 +66,9 @@ struct Cyber962PP {
     /// Instruction cache.
     void * _Nullable * _Nullable _instructionCache;
 
+    /// Keypoints.
+    int _keypoints[64];
+
     // FIXME: Flesh out.
 };
 

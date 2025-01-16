@@ -1,8 +1,8 @@
 //
-//  CyberTestCase.swift
+//  CyberTestCase.m
 //  CyberTests
 //
-//  Copyright © 2024-2025 Christopher M. Hanson
+//  Copyright © 2025 Christopher M. Hanson
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,21 +17,29 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import Cyber
+#import "CyberTestCase.h"
 
-/// Base class for test cases for the Cyber emulation framework.
-final class CyberTestCase: XCTestCase {
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
+NS_ASSUME_NONNULL_BEGIN
 
-        // Additional setup here.
-    }
 
-    override func tearDownWithError() throws {
-        // Additional teardown here.
+@implementation CyberTestCase
 
-        try super.tearDownWithError()
-    }
+- (void)setUp
+{
+    [super setUp];
+
+    // Other setup here.
 }
+
+- (void)tearDown
+{
+    // Other teardown here.
+
+    [super tearDown];
+}
+
+@end
+
+
+NS_ASSUME_NONNULL_END
