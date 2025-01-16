@@ -29,7 +29,13 @@
 CYBER_SOURCE_BEGIN
 
 
+static int Cyber962PPCreateThread(struct Cyber962PP *pp);
 static void * _Nullable Cyber962PPThread(void * _Nullable ppv);
+static enum Cyber962PPState Cyber962PPGetState(struct Cyber962PP *pp);
+static void Cyber962PPSetState(struct Cyber962PP *pp, enum Cyber962PPState state);
+static enum Cyber962PPState Cyber962PPAwaitStateChange(enum Cyber962PPState oldState, struct Cyber962PP *pp);
+
+static void Cyber962PPSingleStep(struct Cyber962PP *processor);
 
 
 struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUnit, int index)
@@ -44,16 +50,23 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
 
     pp->_storage = calloc(8192, sizeof(CyberWord16));
 
-    int lock_err = pthread_mutex_init(&pp->_lock, NULL);
-    if (lock_err != 0) {
-        assert(lock_err != 0); // halt here in debug builds
+    int cond_err = pthread_cond_init(&pp->_stateCondition, NULL);
+    if (cond_err != 0) {
+        assert(cond_err != 0); // halt here in debug builds
         Cyber962PPDispose(pp);
         return NULL;
     }
 
-    int cond_err = pthread_cond_init(&pp->_condition, NULL);
-    if (cond_err != 0) {
-        assert(cond_err != 0); // halt here in debug builds
+    int condition_lock_err = pthread_mutex_init(&pp->_stateLock, NULL);
+    if (condition_lock_err != 0) {
+        assert(condition_lock_err != 0); // halt here in debug builds
+        Cyber962PPDispose(pp);
+        return NULL;
+    }
+
+    int thread_err = Cyber962PPCreateThread(pp);
+    if (thread_err != 0) {
+        assert(thread_err != 0); // halt here in debug builds
         Cyber962PPDispose(pp);
         return NULL;
     }
@@ -69,18 +82,15 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
     return pp;
 }
 
-
 void Cyber962PPDispose(struct Cyber962PP * _Nullable pp)
 {
-    assert(pp->_running == false);
-
     if (pp == NULL) return;
 
     free(pp->_storage);
 
     // pp->_thread is cleaned up by exit
-    pthread_mutex_destroy(&pp->_lock);
-    pthread_cond_destroy(&pp->_condition);
+    pthread_cond_destroy(&pp->_stateCondition);
+    pthread_mutex_destroy(&pp->_stateLock);
 
     free(pp->_instructionCache);
 
@@ -100,25 +110,129 @@ void Cyber962PPStart(struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    int thread_err = pthread_create(&pp->_thread, NULL, Cyber962PPThread, pp);
-    if (thread_err != 0) {
-        assert(thread_err != 0); // halt here in debug builds
-        Cyber962PPDispose(pp);
-        return;
-    }
+    Cyber962PPSetState(pp, Cyber962PPState_Running);
 }
 
 void Cyber962PPStop(struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    pthread_mutex_lock(&pp->_lock); {
-        pp->_running = false;
-    } pthread_mutex_unlock(&pp->_lock);
+    Cyber962PPSetState(pp, Cyber962PPState_Halted);
 }
 
+void Cyber962PPShutdown(struct Cyber962PP *pp)
+{
+    assert(pp != NULL);
+
+    Cyber962PPSetState(pp, Cyber962PPState_Shutdown);
+}
+
+
+/// Create a detached thread (so nothing needs to wait for it) for this Peripheral Processor.
+int Cyber962PPCreateThread(struct Cyber962PP *pp)
+{
+    assert(pp != NULL);
+
+    pthread_attr_t attrs;
+    int attr_err = pthread_attr_init(&attrs);
+    if (attr_err != 0) {
+        return attr_err;
+    }
+
+    int detached_err = pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+    if (detached_err != 0) {
+        (void) pthread_attr_destroy(&attrs);
+        return detached_err;
+    }
+
+    int thread_err = pthread_create(&pp->_thread, NULL, Cyber962PPThread, pp);
+    if (thread_err != 0) {
+        (void) pthread_attr_destroy(&attrs);
+        return thread_err;
+    }
+
+    (void) pthread_attr_destroy(&attrs);
+
+    return 0;
+}
+
+static enum Cyber962PPState Cyber962PPGetState(struct Cyber962PP *pp)
+{
+    assert(pp != NULL);
+
+    enum Cyber962PPState state;
+
+    pthread_mutex_lock(&pp->_stateLock); {
+        state = pp->_state;
+    } pthread_mutex_unlock(&pp->_stateLock);
+
+    return state;
+}
+
+static void Cyber962PPSetState(struct Cyber962PP *pp, enum Cyber962PPState state)
+{
+    pthread_mutex_lock(&pp->_stateLock); {
+        pp->_state = state;
+    } pthread_mutex_unlock(&pp->_stateLock);
+}
+
+static enum Cyber962PPState Cyber962PPAwaitStateChange(enum Cyber962PPState oldState, struct Cyber962PP *pp)
+{
+    assert(pp != NULL);
+
+    enum Cyber962PPState newState = oldState;
+
+    pthread_mutex_lock(&pp->_stateLock); {
+        while (newState == oldState) {
+            pthread_cond_wait(&pp->_stateCondition, &pp->_stateLock);
+            newState = pp->_state;
+        }
+    } pthread_mutex_unlock(&pp->_stateLock);
+
+    return newState;
+}
+
+/// The thread function for the main loop for a Peripheral Processor.
+static void * _Nullable Cyber962PPThread(void * _Nullable ppv)
+{
+    struct Cyber962PP *pp = (struct Cyber962PP *)ppv;
+    assert(pp != NULL);
+
+    // Disable cancellation for this thread.
+
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+    // Loop indefinitely until shut down.
+
+    bool running = true;
+    while (running) {
+        // Check the current state.
+        enum Cyber962PPState state = Cyber962PPGetState(pp);
+
+        switch (state) {
+            case Cyber962PPState_Halted:
+                // Wait for the state to change out of Halted.
+                state = Cyber962PPAwaitStateChange(state, pp);
+                break;
+
+            case Cyber962PPState_Running:
+                // Run the main loop once.
+                Cyber962PPSingleStep(pp);
+                break;
+
+            case Cyber962PPState_Shutdown:
+                // Just exit.
+                running = false;
+                break;
+        }
+    }
+
+    return NULL;
+}
+
+
 /// The main loop for a Peripheral Processor, which runs a single step of its execution.
-void Cyber962PPSingleStep(struct Cyber962PP *processor)
+static void Cyber962PPSingleStep(struct Cyber962PP *processor)
 {
     assert(processor != NULL);
 
@@ -129,31 +243,6 @@ void Cyber962PPSingleStep(struct Cyber962PP *processor)
     CyberWord16 advance = instruction(processor, instructionWord);
     CyberWord16 newP = oldP + advance;
     processor->_regP = newP;
-}
-
-/// The thread function for the main loop for a Peripheral Processor.
-static void * _Nullable Cyber962PPThread(void * _Nullable ppv)
-{
-    struct Cyber962PP *pp = (struct Cyber962PP *)ppv;
-
-    // Disable cancellation.
-
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-
-    // Do work in a loop.
-
-    bool running = true;
-    while (running) {
-        // Run the main loop once.
-        Cyber962PPSingleStep(pp);
-
-        // Check for a stop request.
-        pthread_mutex_lock(&pp->_lock); {
-            running = pp->_running;
-        } pthread_mutex_unlock(&pp->_lock);
-    }
-
-    return NULL;
 }
 
 

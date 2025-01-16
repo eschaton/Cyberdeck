@@ -50,7 +50,10 @@ CYBER_EXPORT void Cyber962PPReset(struct Cyber962PP *pp);
 CYBER_EXPORT void Cyber962PPStart(struct Cyber962PP *pp);
 
 /// Stop the Peripheral Processor.
-CYBER_EXPORT void Cyber962PPStart(struct Cyber962PP *pp);
+CYBER_EXPORT void Cyber962PPStop(struct Cyber962PP *pp);
+
+/// Shut down the Peripheral Processor because the system is shutting down.
+CYBER_EXPORT void Cyber962PPShutdown(struct Cyber962PP *pp);
 
 
 CYBER_HEADER_END

@@ -57,9 +57,6 @@ CYBER_EXPORT struct Cyber962PP *Cyber962IOUGetPeripheralProcessor(struct Cyber96
 /// Gets the Central Memory port that can be used by this IOU to access the Central Memory.
 CYBER_EXPORT struct Cyber180CMPort *Cyber962IOUGetCentralMemoryPort(struct Cyber962IOU *iou);
 
-/// Sets the Central Memory port that this IOU can use to access the Central Memory.
-CYBER_EXPORT void Cyber962IOUSetCentralMemoryPort(struct Cyber962IOU *iou, struct Cyber180CMPort *port);
-
 
 /// Gets the I/O Channel with the given index.
 CYBER_EXPORT struct Cyber962IOChannel *Cyber962IOUGetIOChannelAtIndex(int index);

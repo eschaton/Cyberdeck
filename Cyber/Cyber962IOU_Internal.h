@@ -52,6 +52,10 @@ struct Cyber962IOU {
 };
 
 
+/// Sets the Central Memory port that this IOU can use to access the Central Memory.
+CYBER_EXPORT void Cyber962IOUSetCentralMemoryPort(struct Cyber962IOU *iou, struct Cyber180CMPort *port);
+
+
 CYBER_HEADER_END
 
 #endif /* __CYBER_CYBER962IOU_INTERNAL_H__ */
