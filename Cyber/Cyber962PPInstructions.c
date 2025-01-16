@@ -1459,9 +1459,10 @@ CyberWord16 Cyber962PPInstruction_PSN(struct Cyber962PP *processor, union Cyber9
 /// Implementation of "Keypoint" instructions.
 CyberWord16 Cyber962PPInstruction_KPT(struct Cyber962PP *processor, union Cyber962PPInstructionWord instructionWord)
 {
-    // Do nothing but set an indicator from `d` and advance P.
+    // Do nothing but set the indicator at `d` and advance P.
 
-    // FIXME: Do something better for Keypoint.
+    CyberWord6 d = instructionWord._d.d;
+    processor->_keypoints[d] += 1;
 
     return 1;
 }
