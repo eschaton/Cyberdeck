@@ -20,6 +20,7 @@
 #include "Cyber962PP_Internal.h"
 
 #include "Cyber962PPInstructions.h"
+#include "CyberState.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -50,19 +51,7 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
 
     pp->_storage = calloc(8192, sizeof(CyberWord16));
 
-    int cond_err = pthread_cond_init(&pp->_stateCondition, NULL);
-    if (cond_err != 0) {
-        assert(cond_err != 0); // halt here in debug builds
-        Cyber962PPDispose(pp);
-        return NULL;
-    }
-
-    int condition_lock_err = pthread_mutex_init(&pp->_stateLock, NULL);
-    if (condition_lock_err != 0) {
-        assert(condition_lock_err != 0); // halt here in debug builds
-        Cyber962PPDispose(pp);
-        return NULL;
-    }
+    pp->_state = CyberStateCreate(Cyber962PPState_Halted);
 
     int thread_err = Cyber962PPCreateThread(pp);
     if (thread_err != 0) {
@@ -89,8 +78,8 @@ void Cyber962PPDispose(struct Cyber962PP * _Nullable pp)
     free(pp->_storage);
 
     // pp->_thread is cleaned up by exit
-    pthread_cond_destroy(&pp->_stateCondition);
-    pthread_mutex_destroy(&pp->_stateLock);
+
+    CyberStateDispose(pp->_state);
 
     free(pp->_instructionCache);
 
@@ -160,35 +149,21 @@ static enum Cyber962PPState Cyber962PPGetState(struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    enum Cyber962PPState state;
-
-    pthread_mutex_lock(&pp->_stateLock); {
-        state = pp->_state;
-    } pthread_mutex_unlock(&pp->_stateLock);
-
-    return state;
+    return CyberStateGetValue(pp->_state);
 }
 
 static void Cyber962PPSetState(struct Cyber962PP *pp, enum Cyber962PPState state)
 {
-    pthread_mutex_lock(&pp->_stateLock); {
-        pp->_state = state;
-    } pthread_mutex_unlock(&pp->_stateLock);
+    assert(pp != NULL);
+
+    CyberStateSetValue(pp->_state, state);
 }
 
 static enum Cyber962PPState Cyber962PPAwaitStateChange(enum Cyber962PPState oldState, struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    enum Cyber962PPState newState = oldState;
-
-    pthread_mutex_lock(&pp->_stateLock); {
-        while (newState == oldState) {
-            pthread_cond_wait(&pp->_stateCondition, &pp->_stateLock);
-            newState = pp->_state;
-        }
-    } pthread_mutex_unlock(&pp->_stateLock);
-
+    enum Cyber962PPState newState = CyberStateAwaitValueChange(oldState, pp->_state);
     return newState;
 }
 

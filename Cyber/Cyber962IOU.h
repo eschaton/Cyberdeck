@@ -65,4 +65,3 @@ CYBER_EXPORT struct Cyber962IOChannel *Cyber962IOUGetIOChannelAtIndex(int index)
 CYBER_HEADER_END
 
 #endif /* __CYBER_CYBER180CM_H__ */
-
