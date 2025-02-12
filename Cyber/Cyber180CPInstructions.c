@@ -311,8 +311,9 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
 }
 
 
-/// Indicate whether the given value is in the given range.
-static inline bool IN_RANGE(uint8_t value, uint8_t lower, uint8_t upper)
+// MARK: - Instruction Implementation Utilities
+
+bool IN_RANGE(uint8_t value, uint8_t lower, uint8_t upper)
 {
     return (value >= lower) && (value <= upper);
 }
@@ -336,7 +337,6 @@ enum Cyber180CPInstructionType Cyber180CPGetInstructionType(union Cyber180CPInst
     }
 }
 
-/// The amount of space, in bytes, taken by a specific instruction.
 CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instructionWord)
 {
     switch (Cyber180CPGetInstructionType(instructionWord)) {
@@ -348,37 +348,24 @@ CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instruc
 }
 
 
-// MARK: - Instruction Implementation Utilities
-
-/// Sign-extend a 16-bit word to a 32-bit word.
-static inline int32_t Signed32FromSigned16ViaExtend(int16_t word16)
+int32_t Signed32FromSigned16ViaExtend(int16_t word16)
 {
     return word16;
 }
 
-/// Sign-extend a 16-bit word to a 64-bit word.
-static inline int64_t Signed64FromSigned6ViaExtend(int16_t word16)
+int64_t Signed64FromSigned16ViaExtend(int16_t word16)
 {
     return word16;
 }
 
-/// Create a bit mask given a starting bit and length.
-///
-/// Create a mask given a starting bit position (recalling that bits are numbered 0...63 from left to right, where 0 is the MSB). As an example:
-///
-/// ```
-/// CalculateBitMask(2,5) -> 0b00111110_00000000_00000000_00000000_00000000_00000000_00000000_00000000
-/// ```
-///
-static inline CyberWord64 CalculateBitMask(CyberWord64 bit_pos, CyberWord64 bit_len)
+CyberWord64 Cyber180CPInstruction_CalculateBitMask(CyberWord64 bit_pos, CyberWord64 bit_len)
 {
-    CyberWord64 mask = 0;
-
+    CyberWord64 bits = 0;
     for (CyberWord64 i = 0; i < bit_len; i++) {
-        mask |= (1 << i);
+        bits |= (1 << i);
     }
-
-    return mask << (63 - bit_len);
+    CyberWord64 mask = bits << (63 - bit_len - 1);
+    return mask;
 }
 
 
@@ -958,7 +945,7 @@ CyberWord64 Cyber180CPInstruction_SMULT(struct Cyber180CP *processor, union Cybe
 CyberWord64 Cyber180CPInstruction_LX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     int64_t Aj = Cyber180CPGetA(processor, word._jkQ.Q);
-    int64_t signed_Q = Signed64FromSigned6ViaExtend(word._jkQ.Q);
+    int64_t signed_Q = Signed64FromSigned16ViaExtend(word._jkQ.Q);
     CyberWord64 sourceVirtualAddress = Aj + (signed_Q * 8);
     if ((sourceVirtualAddress % 8) != 0) {
         // TODO: Detect Address Specification Error (2.8.1.5)
@@ -1042,11 +1029,9 @@ CyberWord64 Cyber180CPInstruction_MULRQ(struct Cyber180CP *processor, union Cybe
 /// Enter Xk, Signed Immediate (2.2.6.2, 8DjkQ)
 CyberWord64 Cyber180CPInstruction_ENTE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t signed_Q = Signed64FromSigned6ViaExtend(word._jkQ.Q);
-    int64_t signed_Xj = (int64_t) Cyber180CPGetX(processor, word._jkQ.j);
-    int64_t signed_result = signed_Xj + signed_Q;
+    int64_t signed_Q = Signed64FromSigned16ViaExtend(word._jkQ.Q);
     int k = word._jkQ.k;
-    Cyber180CPSetX(processor, k, signed_result);
+    Cyber180CPSetX(processor, k, signed_Q);
     return 4;
 }
 
@@ -1220,9 +1205,21 @@ CyberWord64 Cyber180CPInstruction_SHFR(struct Cyber180CP *processor, union Cyber
 }
 
 
+/// Isolate Bit Mask into Xk per XiR plus D
 CyberWord64 Cyber180CPInstruction_ISOM(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 XiR = Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF;
+    CyberWord64 D = word._jkiD.D;
+    CyberWord64 XiR_D = XiR + D;
+    CyberWord64 bit_pos = XiR_D >> 6;
+    CyberWord64 bit_len = XiR_D & 0x3F;
+    if ((bit_pos + bit_len) > 63) {
+        // TODO: Handle Instruction Specification Error
+    }
+    CyberWord64 mask = Cyber180CPInstruction_CalculateBitMask(bit_pos, bit_len);
+    Cyber180CPSetX(processor, word._jkiD.k, mask);
+
+    return 4;
 }
 
 
@@ -1231,7 +1228,7 @@ CyberWord64 Cyber180CPInstruction_ISOM(struct Cyber180CP *processor, union Cyber
 /// See 2.2.9 for bit mask descriptor specification.
 CyberWord64 Cyber180CPInstruction_ISOB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    CyberWord64 XiR = Cyber180CPGetX(processor, word._jkiD.i) & 0x00000000FFFFFFFF;
+    CyberWord64 XiR = Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF;
     CyberWord64 D = word._jkiD.D;
     CyberWord64 XiR_D = XiR + D;
     CyberWord64 bit_pos = XiR_D >> 6;
@@ -1239,7 +1236,7 @@ CyberWord64 Cyber180CPInstruction_ISOB(struct Cyber180CP *processor, union Cyber
     if ((bit_pos + bit_len) > 63) {
         // TODO: Handle Instruction Specification Error
     }
-    CyberWord64 mask = CalculateBitMask(bit_pos, bit_len);
+    CyberWord64 mask = Cyber180CPInstruction_CalculateBitMask(bit_pos, bit_len);
     CyberWord64 bits = Cyber180CPGetX(processor, word._jkiD.j) & mask;
     CyberWord64 Xk = bits >> (63 - bit_len); // right-justify the bits
     Cyber180CPSetX(processor, word._jkiD.k, Xk);
@@ -1322,13 +1319,13 @@ CyberWord64 Cyber180CPInstruction_LBYTS(struct Cyber180CP *processor, union Cybe
 /// Store Bytes from Xk at (Aj displaced by D and indexed by XiR), Length Per S (2.2.1.1, DSjkiD)
 CyberWord64 Cyber180CPInstruction_SBYTS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    CyberWord32 length = word._SjkID.S - 7;
-    int64_t Aj = processor->_regA[word._SjkID.j];
-    int i = word._SjkID.i;
+    CyberWord32 length = word._SjkiD.S - 7;
+    int64_t Aj = processor->_regA[word._SjkiD.j];
+    int i = word._SjkiD.i;
     int64_t XiR = Cyber180CPGetX(processor, i) & 0x00000000FFFFFFFF;
-    int64_t D = word._SjkID.D;
+    int64_t D = word._SjkiD.D;
     int64_t destinationVirtualAddress = Aj + (D + XiR & 0x00000000FFFFFFFF);
-    int k = word._SjkID.k;
+    int k = word._SjkiD.k;
     CyberWord64 Xk = Cyber180CPGetX(processor, k);
     Cyber180CPWriteBytes(processor, destinationVirtualAddress, (CyberWord8 *)&Xk, length);
     return 4;

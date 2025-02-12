@@ -25,6 +25,7 @@
 #include "CyberThread.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -53,7 +54,10 @@ struct Cyber180CP * _Nullable Cyber180CPCreate(struct Cyber962 * _Nonnull system
         .terminate = NULL,
     };
 
-    cp->_thread = CyberThreadCreate(&Cyber180CPThreadFunctions, cp);
+    char name[32];
+    snprintf(name, 32, "Cyber180CP-%d", index);
+
+    cp->_thread = CyberThreadCreate(name, &Cyber180CPThreadFunctions, cp);
 
     cp->_mode = Cyber180CPModeMonitor;
 
@@ -137,8 +141,15 @@ void Cyber180CPSetA(struct Cyber180CP *cp, int i, CyberWord48 value)
     }
 }
 
-
 CyberWord64 Cyber180CPGetX(struct Cyber180CP *cp, int i)
+{
+    assert(cp != NULL);
+    assert((i >= 0) && (i <= 0xf));
+
+    return cp->_regX[i];
+}
+
+CyberWord64 Cyber180CPGetXOr0(struct Cyber180CP *cp, int i)
 {
     assert(cp != NULL);
     assert((i >= 0) && (i <= 0xf));
@@ -155,9 +166,7 @@ void Cyber180CPSetX(struct Cyber180CP *cp, int i, CyberWord64 value)
     assert(cp != NULL);
     assert((i >= 0) && (i <= 0xf));
 
-    if (i != 0) {
-        cp->_regX[i] = value;
-    }
+    cp->_regX[i] = value;
 }
 
 

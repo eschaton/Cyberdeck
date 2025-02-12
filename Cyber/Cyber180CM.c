@@ -35,7 +35,7 @@ struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system
            || (capacity == (64 * 2) * 1048576)
            || (capacity == (64 * 3) * 1048576)
            || (capacity == (64 * 4) * 1048576));
-    assert(ports > 2);
+    assert(ports >= 2);
 
     struct Cyber180CM *cm = calloc(1, sizeof(struct Cyber180CM));
 

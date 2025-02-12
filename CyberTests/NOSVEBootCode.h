@@ -1,6 +1,6 @@
 //
-//  CyberDefines.h
-//  Cyber
+//  NOSVEBootCode.h
+//  CyberTests
 //
 //  Copyright © 2025 Christopher M. Hanson
 //
@@ -17,28 +17,21 @@
 //  limitations under the License.
 //
 
-#ifndef __CYBER_CYBERDEFINES_H__
-#define __CYBER_CYBERDEFINES_H__
+#include <Cyber/Cyber.h>
+
+#ifndef __CYBERTESTS_NOSVEBOOTCODE_H__
+#define __CYBERTESTS_NOSVEBOOTCODE_H__
+
+CYBER_HEADER_BEGIN
 
 
-#if defined(__cplusplus)
-#define CYBER_EXPORT        extern "C"
-#else
-#define CYBER_EXPORT        extern
-#endif
+/// NOS/VE boot code taken from listing `02.pdf` pp.16-17
+CYBER_EXPORT CyberWord8 NOSVEBootCode[];
+
+/// Length in bytes of ``NOSVEBootCode``.
+CYBER_EXPORT const CyberWord32 NOSVEBootCodeLength;
 
 
-#define CYBER_PACKED        __attribute__((packed))
+CYBER_HEADER_END
 
-
-#define CYBER_NONNULL_BEGIN _Pragma("clang assume_nonnull begin")
-#define CYBER_NONNULL_END   _Pragma("clang assume_nonnull end")
-
-#define CYBER_HEADER_BEGIN  CYBER_NONNULL_BEGIN
-#define CYBER_HEADER_END    CYBER_NONNULL_END
-
-#define CYBER_SOURCE_BEGIN  CYBER_NONNULL_BEGIN
-#define CYBER_SOURCE_END    CYBER_NONNULL_END
-
-
-#endif /* __CYBER_CYBERDEFINES_H__ */
+#endif /* __CYBERTESTS_NOSVEBOOTCODE_H__ */

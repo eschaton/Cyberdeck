@@ -49,7 +49,7 @@ struct CyberThreadFunctions {
 /// Creates a detached thread.
 ///
 /// - Warning: The thread is not started automatically.
-CYBER_EXPORT struct CyberThread * _Nullable CyberThreadCreate(struct CyberThreadFunctions *threadFunctions, void * _Nullable context);
+CYBER_EXPORT struct CyberThread * _Nullable CyberThreadCreate(const char *name, struct CyberThreadFunctions *threadFunctions, void * _Nullable context);
 
 /// Disposes of a thread.
 ///

@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "CyberState.h"
 
@@ -29,16 +30,24 @@ CYBER_SOURCE_BEGIN
 
 
 static void * _Nullable CyberThreadPthreadFunction(void * _Nullable t);
+static void CyberThreadFunctionPlaceholder(struct CyberThread *thread, void * _Nullable context);
 
 
-struct CyberThread * _Nullable CyberThreadCreate(struct CyberThreadFunctions *threadFunctions, void * _Nullable context)
+struct CyberThread * _Nullable CyberThreadCreate(const char *name, struct CyberThreadFunctions *threadFunctions, void * _Nullable context)
 {
+    assert(name != NULL);
     assert(threadFunctions != NULL);
     assert(threadFunctions->loop != NULL);
 
     struct CyberThread *thread = calloc(1, sizeof(struct CyberThread));
 
+    thread->_name = strdup(name);
     thread->_context = context;
+
+    thread->_functions.start = threadFunctions->start ?: CyberThreadFunctionPlaceholder;
+    thread->_functions.loop = threadFunctions->loop;
+    thread->_functions.stop = threadFunctions->stop ?: CyberThreadFunctionPlaceholder;
+    thread->_functions.terminate = threadFunctions->terminate ?: CyberThreadFunctionPlaceholder;
 
     thread->_state = CyberStateCreate(CyberThreadState_Stopped);
     if (thread->_state == NULL) {
@@ -113,6 +122,10 @@ static void * _Nullable CyberThreadPthreadFunction(void * _Nullable t)
 
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
+    // Set this thread's name.
+
+    pthread_setname_np(thread->_name);
+
     // Loop indefinitely until shut down.
 
     bool running = true;
@@ -120,25 +133,18 @@ static void * _Nullable CyberThreadPthreadFunction(void * _Nullable t)
         // Check the current state.
         enum CyberThreadState state = CyberStateGetValue(thread->_state);
 
-#define CALL_IF(fn) \
-    do { \
-        if ((fn) != NULL) { \
-            ((fn))(thread, thread->_context); \
-        } \
-    } while(0)
-
         switch (state) {
             case CyberThreadState_Stopped:
-                // Call the stop function if there is one.
-                CALL_IF(thread->_functions->stop);
+                // Call the stop function if there is one. (Calls placeholder if not.)
+                thread->_functions.stop(thread, thread->_context);
 
                 // Wait for the state to change out of Stopped.
                 state = CyberStateAwaitValueChange(state, thread->_state);
                 break;
 
             case CyberThreadState_Started:
-                // Call the start function if there is one.
-                CALL_IF(thread->_functions->start);
+                // Call the stop function if there is one. (Calls placeholder if not.)
+                thread->_functions.start(thread, thread->_context);
 
                 // Transition to running state.
                 CyberStateSetValue(thread->_state, CyberThreadState_Running);
@@ -146,22 +152,26 @@ static void * _Nullable CyberThreadPthreadFunction(void * _Nullable t)
 
             case CyberThreadState_Running:
                 // Run the main loop once.
-                thread->_functions->loop(thread, thread->_context);
+                thread->_functions.loop(thread, thread->_context);
                 break;
 
             case CyberThreadState_Terminated:
-                // Call the terminate function if there is one.
-                CALL_IF(thread->_functions->terminate);
+                // Call the terminate function if there is one. (Calls placeholder if not.)
+                thread->_functions.terminate(thread, thread->_context);
 
                 // Just exit.
                 running = false;
                 break;
         }
-
-#undef CALL_IF
     }
 
     return NULL;
+}
+
+
+static void CyberThreadFunctionPlaceholder(struct CyberThread *thread, void * _Nullable context)
+{
+    // Do nothing.
 }
 
 

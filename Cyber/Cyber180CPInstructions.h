@@ -37,41 +37,74 @@ union Cyber180CPInstructionWord {
 
     /// The raw in-memory value of the instruction word.
     ///
-    /// - Note: For a 16-bit instruction, the second 16 bits are ignored.
+    /// - Note: For a 16-bit instruction, the second 16 bits are ignored at the point where these are being passed around.
     ///
-    /// - Warning: Never use `sizeof(union Cyber180CPInstructionWord)`, always call 
+    /// - Warning: Never use `sizeof(union Cyber180CPInstructionWord)`, always use ``Cyber180CPInstructionAdvance`` to get the size!
+    ///
+    /// - Warning: Be sure to use the correct endianness for `_raw`!
     CyberWord32 _raw;
 
     struct {
+#if BIG_ENDIAN
         unsigned opcode : 8;
         unsigned j : 4;
         unsigned k : 4;
         unsigned i : 4;
         unsigned D : 12;
-    } _jkiD;
+#else
+        unsigned D : 12;
+        unsigned i : 4;
+        unsigned k : 4;
+        unsigned j : 4;
+        unsigned opcode : 8;
+#endif
+    } CYBER_PACKED _jkiD;
 
     struct {
+#if BIG_ENDIAN
         unsigned opcode : 5;
         unsigned S : 3;
         unsigned j : 4;
         unsigned k : 4;
         unsigned i : 4;
         unsigned D : 12;
-    } _SjkID;
+#else
+        unsigned D : 12;
+        unsigned i : 4;
+        unsigned k : 4;
+        unsigned j : 4;
+        unsigned S : 3;
+        unsigned opcode : 5;
+#endif
+    } CYBER_PACKED _SjkiD;
 
     struct {
+#if BIG_ENDIAN
         unsigned opcode : 8;
         unsigned j : 4;
         unsigned k : 4;
         unsigned unused : 16;
-    } _jk;
+#else
+        unsigned unused : 16;
+        unsigned k : 4;
+        unsigned j : 4;
+        unsigned opcode : 8;
+#endif
+    } CYBER_PACKED _jk;
 
     struct {
+#if BIG_ENDIAN
         unsigned opcode : 8;
         unsigned j : 4;
         unsigned k : 4;
-        unsigned Q : 12;
-    } _jkQ;
+        unsigned Q : 16;
+#else
+        unsigned Q : 16;
+        unsigned k : 4;
+        unsigned j : 4;
+        unsigned opcode : 8;
+#endif
+    } CYBER_PACKED _jkQ;
 };
 
 

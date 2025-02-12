@@ -88,6 +88,9 @@ CYBER_EXPORT void Cyber180CPSetA(struct Cyber180CP *cp, int i, CyberWord48 value
 /// Get the value of the Xi register.
 CYBER_EXPORT CyberWord64 Cyber180CPGetX(struct Cyber180CP *cp, int i);
 
+/// Get the value of the Xi register, or 0 for X0.
+CYBER_EXPORT CyberWord64 Cyber180CPGetXOr0(struct Cyber180CP *cp, int i);
+
 /// Set the value of the Xi register.
 CYBER_EXPORT void Cyber180CPSetX(struct Cyber180CP *cp, int i, CyberWord64 value);
 

@@ -41,14 +41,17 @@ struct CyberThread {
     /// The POSIX thread backing this CyberThread.
     pthread_t _pthread;
 
+    /// The name of this CyberThread.
+    const char * _name;
+
     /// The developer-supplied context for this CyberThread.
     void * _Nullable _context;
 
     /// The state of this thread, wrapping a ``CyberThreadState``.
     struct CyberState *_state;
 
-    /// The functions called by this thread.
-    struct CyberThreadFunctions * _Nullable _functions;
+    /// The functions called by this thread, copied into place at creation.
+    struct CyberThreadFunctions _functions;
 };
 
 

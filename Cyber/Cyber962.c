@@ -69,12 +69,12 @@ struct Cyber962 * _Nullable Cyber962Create(const char *identifier, size_t memory
 {
     assert(identifier != NULL);
     assert(memorySize <= (256 * 1024 * 1024));
-    assert((centralProcessors > 0) && (centralProcessors <= 1));
+    assert((centralProcessors > 0) && (centralProcessors <= 2));
     assert((inputOutputUnits > 0) && (inputOutputUnits <= 3));
 
     // Create the system components and connect them together.
 
-    struct Cyber962 *system = calloc(0, sizeof(struct Cyber962));
+    struct Cyber962 *system = calloc(1, sizeof(struct Cyber962));
 
     system->_identifier = strdup(identifier);
 

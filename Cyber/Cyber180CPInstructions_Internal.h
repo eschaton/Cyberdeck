@@ -34,8 +34,35 @@ enum Cyber180CPInstructionType {
 };
 
 
+// MARK: - Instruction Implementation Utilities
+
 /// Get the instruciton type of the given instruction word.
 CYBER_EXPORT enum Cyber180CPInstructionType Cyber180CPGetInstructionType(union Cyber180CPInstructionWord instructionWord);
+
+/// Indicate whether the given value is in the given range.
+CYBER_EXPORT bool IN_RANGE(uint8_t value, uint8_t lower, uint8_t upper);
+
+/// Get the type of the instruction given the instruction word.
+CYBER_EXPORT enum Cyber180CPInstructionType Cyber180CPGetInstructionType(union Cyber180CPInstructionWord instructionWord);
+
+/// The amount of space, in bytes, taken by a specific instruction.
+CYBER_EXPORT CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instructionWord);
+
+/// Sign-extend a 16-bit word to a 32-bit word.
+CYBER_EXPORT int32_t Signed32FromSigned16ViaExtend(int16_t word16);
+
+/// Sign-extend a 16-bit word to a 64-bit word.
+CYBER_EXPORT int64_t Signed64FromSigned16ViaExtend(int16_t word16);
+
+/// Create a bit mask given a starting bit and length.
+///
+/// Create a mask given a starting bit position (recalling that bits are numbered 0...63 from left to right, where 0 is the MSB). As an example:
+///
+/// ```
+/// CalculateBitMask(2,5) -> 0b00111110_00000000_00000000_00000000_00000000_00000000_00000000_00000000
+/// ```
+///
+CYBER_EXPORT CyberWord64 Cyber180CPInstruction_CalculateBitMask(CyberWord64 bit_pos, CyberWord64 bit_len);
 
 
 // MARK: - Instruction Declarations

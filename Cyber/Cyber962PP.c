@@ -25,7 +25,9 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 CYBER_SOURCE_BEGIN
@@ -55,7 +57,10 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
         .terminate = NULL,
     };
 
-    pp->_thread = CyberThreadCreate(&Cyber962PPThreadFunctions, pp);
+    char name[32];
+    snprintf(name, 32, "Cyber962PP-%d", index);
+
+    pp->_thread = CyberThreadCreate(name, &Cyber962PPThreadFunctions, pp);
 
     pp->_instructionCache = calloc(65536, sizeof(void *));
 
