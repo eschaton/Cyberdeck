@@ -21,6 +21,7 @@
 
 #include "Cyber962PPInstructions.h"
 #include "CyberState.h"
+#include "CyberThread.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -30,11 +31,7 @@
 CYBER_SOURCE_BEGIN
 
 
-static int Cyber962PPCreateThread(struct Cyber962PP *pp);
-static void * _Nullable Cyber962PPThread(void * _Nullable ppv);
-static enum Cyber962PPState Cyber962PPGetState(struct Cyber962PP *pp);
-static void Cyber962PPSetState(struct Cyber962PP *pp, enum Cyber962PPState state);
-static enum Cyber962PPState Cyber962PPAwaitStateChange(enum Cyber962PPState oldState, struct Cyber962PP *pp);
+static void Cyber962PPMainLoop(struct CyberThread *thread, void * _Nullable ppv);
 
 static void Cyber962PPSingleStep(struct Cyber962PP *processor);
 
@@ -51,14 +48,14 @@ struct Cyber962PP * _Nullable Cyber962PPCreate(struct Cyber962IOU *inputOutputUn
 
     pp->_storage = calloc(8192, sizeof(CyberWord16));
 
-    pp->_state = CyberStateCreate(Cyber962PPState_Halted);
+    static struct CyberThreadFunctions Cyber962PPThreadFunctions = {
+        .start = NULL,
+        .loop = Cyber962PPMainLoop,
+        .stop = NULL,
+        .terminate = NULL,
+    };
 
-    int thread_err = Cyber962PPCreateThread(pp);
-    if (thread_err != 0) {
-        assert(thread_err != 0); // halt here in debug builds
-        Cyber962PPDispose(pp);
-        return NULL;
-    }
+    pp->_thread = CyberThreadCreate(&Cyber962PPThreadFunctions, pp);
 
     pp->_instructionCache = calloc(65536, sizeof(void *));
 
@@ -77,9 +74,7 @@ void Cyber962PPDispose(struct Cyber962PP * _Nullable pp)
 
     free(pp->_storage);
 
-    // pp->_thread is cleaned up by exit
-
-    CyberStateDispose(pp->_state);
+    CyberThreadDispose(pp->_thread);
 
     free(pp->_instructionCache);
 
@@ -99,110 +94,31 @@ void Cyber962PPStart(struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    Cyber962PPSetState(pp, Cyber962PPState_Running);
+    CyberThreadStart(pp->_thread);
 }
 
 void Cyber962PPStop(struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    Cyber962PPSetState(pp, Cyber962PPState_Halted);
+    CyberThreadStop(pp->_thread);
 }
 
 void Cyber962PPShutdown(struct Cyber962PP *pp)
 {
     assert(pp != NULL);
 
-    Cyber962PPSetState(pp, Cyber962PPState_Shutdown);
-}
-
-
-/// Create a detached thread (so nothing needs to wait for it) for this Peripheral Processor.
-int Cyber962PPCreateThread(struct Cyber962PP *pp)
-{
-    assert(pp != NULL);
-
-    pthread_attr_t attrs;
-    int attr_err = pthread_attr_init(&attrs);
-    if (attr_err != 0) {
-        return attr_err;
-    }
-
-    int detached_err = pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-    if (detached_err != 0) {
-        (void) pthread_attr_destroy(&attrs);
-        return detached_err;
-    }
-
-    int thread_err = pthread_create(&pp->_thread, NULL, Cyber962PPThread, pp);
-    if (thread_err != 0) {
-        (void) pthread_attr_destroy(&attrs);
-        return thread_err;
-    }
-
-    (void) pthread_attr_destroy(&attrs);
-
-    return 0;
-}
-
-static enum Cyber962PPState Cyber962PPGetState(struct Cyber962PP *pp)
-{
-    assert(pp != NULL);
-
-    return CyberStateGetValue(pp->_state);
-}
-
-static void Cyber962PPSetState(struct Cyber962PP *pp, enum Cyber962PPState state)
-{
-    assert(pp != NULL);
-
-    CyberStateSetValue(pp->_state, state);
-}
-
-static enum Cyber962PPState Cyber962PPAwaitStateChange(enum Cyber962PPState oldState, struct Cyber962PP *pp)
-{
-    assert(pp != NULL);
-
-    enum Cyber962PPState newState = CyberStateAwaitValueChange(oldState, pp->_state);
-    return newState;
+    CyberThreadTerminate(pp->_thread);
 }
 
 /// The thread function for the main loop for a Peripheral Processor.
-static void * _Nullable Cyber962PPThread(void * _Nullable ppv)
+static void Cyber962PPMainLoop(struct CyberThread *thread, void * _Nullable ppv)
 {
     struct Cyber962PP *pp = (struct Cyber962PP *)ppv;
     assert(pp != NULL);
 
-    // Disable cancellation for this thread.
-
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-
-    // Loop indefinitely until shut down.
-
-    bool running = true;
-    while (running) {
-        // Check the current state.
-        enum Cyber962PPState state = Cyber962PPGetState(pp);
-
-        switch (state) {
-            case Cyber962PPState_Halted:
-                // Wait for the state to change out of Halted.
-                state = Cyber962PPAwaitStateChange(state, pp);
-                break;
-
-            case Cyber962PPState_Running:
-                // Run the main loop once.
-                Cyber962PPSingleStep(pp);
-                break;
-
-            case Cyber962PPState_Shutdown:
-                // Just exit.
-                running = false;
-                break;
-        }
-    }
-
-    return NULL;
+    // Run the main loop once.
+    Cyber962PPSingleStep(pp);
 }
 
 

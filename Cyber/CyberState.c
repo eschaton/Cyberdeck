@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-#include "CyberState.h"
+#include "CyberState_Internal.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -26,13 +26,6 @@
 
 
 CYBER_SOURCE_BEGIN
-
-
-struct CyberState {
-    int _value;
-    pthread_mutex_t _mutex;
-    pthread_cond_t _condition;
-};
 
 
 struct CyberState * _Nullable CyberStateCreate(int initialValue)

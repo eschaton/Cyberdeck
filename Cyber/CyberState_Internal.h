@@ -1,5 +1,5 @@
 //
-//  Cyber180CP_Internal.h
+//  CyberState_Internal.h
 //  Cyber
 //
 //  Copyright © 2025 Christopher M. Hanson
@@ -17,43 +17,23 @@
 //  limitations under the License.
 //
 
-#include <Cyber/Cyber180CP.h>
-
 #include "CyberState.h"
 
 #include <pthread.h>
 
-#ifndef __CYBER_CYBER180CP_INTERNAL_H__
-#define __CYBER_CYBER180CP_INTERNAL_H__
+#ifndef __CYBER_CYBERSTATE_INTERNAL_H__
+#define __CYBER_CYBERSTATE_INTERNAL_H__
 
 CYBER_HEADER_BEGIN
 
 
-struct CyberThread;
-
-
-struct Cyber180CP {
-
-    /// The system that this is a part of.
-    struct Cyber962 *_system;
-
-    /// Index of this Cyber 180 Central Processor within the system.
-    int _index;
-
-    /// The port that this Central Processor can use to access Central Memory.
-    struct Cyber180CMPort *_centralMemoryPort;
-
-    /// The thread that represents this Central Processor.
-    struct CyberThread *_thread;
-
-    // Registers
-
-    // TODO: Add register definitions.
-
-    // FIXME: Flesh out.
+struct CyberState {
+    int _value;
+    pthread_mutex_t _mutex;
+    pthread_cond_t _condition;
 };
 
 
 CYBER_HEADER_END
 
-#endif /* __CYBER_CYBER180CP_INTERNAL_H__ */
+#endif /* __CYBER_CYBERSTATE_INTERNAL_H__ */

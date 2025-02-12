@@ -21,6 +21,8 @@
 
 #include <Cyber/Cyber180CMPort.h>
 
+#include "CyberThread.h"
+
 #include <assert.h>
 #include <stdlib.h>
 
@@ -28,7 +30,7 @@
 CYBER_SOURCE_BEGIN
 
 
-static void * _Nullable Cyber180CPThread(void * _Nullable cpv);
+static void Cyber180CPMainLoop(struct CyberThread *thread, void * _Nullable cpv);
 
 static void Cyber180CPSingleStep(struct Cyber180CP *cp);
 
@@ -43,26 +45,14 @@ struct Cyber180CP * _Nullable Cyber180CPCreate(struct Cyber962 * _Nonnull system
     cp->_system = system;
     cp->_index = index;
 
-    pthread_attr_t thread_attr;
-    int thread_attr_err = pthread_attr_init(&thread_attr);
-    if (thread_attr_err != 0) {
-        assert(thread_attr_err != 0); // halt here in debug builds
-        Cyber180CPDispose(cp);
-        return NULL;
-    }
+    static struct CyberThreadFunctions Cyber180CPThreadFunctions = {
+        .start = NULL,
+        .loop = Cyber180CPMainLoop,
+        .stop = NULL,
+        .terminate = NULL,
+    };
 
-    (void)pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
-
-    int thread_err = pthread_create(&cp->_thread, &thread_attr, Cyber180CPThread, cp);
-    if (thread_err != 0) {
-        assert(thread_err != 0); // halt here in debug builds
-        Cyber180CPDispose(cp);
-        return NULL;
-    }
-
-    (void)pthread_attr_destroy(&thread_attr);
-
-    cp->_state = CyberStateCreate(Cyber180CPState_Halted);
+    cp->_thread = CyberThreadCreate(&Cyber180CPThreadFunctions, cp);
 
     return cp;
 }
@@ -80,59 +70,31 @@ void Cyber180CPStart(struct Cyber180CP *cp)
 {
     assert(cp != NULL);
 
-    CyberStateSetValue(cp->_state, Cyber180CPState_Running);
+    CyberThreadStart(cp->_thread);
 }
 
 void Cyber180CPStop(struct Cyber180CP *cp)
 {
     assert(cp != NULL);
 
-    CyberStateSetValue(cp->_state, Cyber180CPState_Halted);
+    CyberThreadStop(cp->_thread);
 }
 
 void Cyber180CPShutDown(struct Cyber180CP *cp)
 {
     assert(cp != NULL);
 
-    CyberStateSetValue(cp->_state, Cyber180CPState_Shutdown);
+    CyberThreadTerminate(cp->_thread);
 }
 
 
-void * _Nullable Cyber180CPThread(void * _Nullable cpv)
+void Cyber180CPMainLoop(struct CyberThread *thread, void * _Nullable cpv)
 {
     struct Cyber180CP *cp = (struct Cyber180CP *)cpv;
     assert(cp != NULL);
 
-    // Disable cancellation for this thread.
-
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-
-    // Loop indefinitely until shut down.
-
-    bool running = true;
-    while (running) {
-        // Check the current state.
-        enum Cyber180CPState state = CyberStateGetValue(cp->_state);
-
-        switch (state) {
-            case Cyber180CPState_Halted:
-                // Wait for the state to change out of Halted.
-                state = CyberStateAwaitValueChange(state, cp->_state);
-                break;
-
-            case Cyber180CPState_Running:
-                // Run the main loop once.
-                Cyber180CPSingleStep(cp);
-                break;
-
-            case Cyber180CPState_Shutdown:
-                // Just exit.
-                running = false;
-                break;
-        }
-    }
-
-    return NULL;
+    // Run the main loop once.
+    Cyber180CPSingleStep(cp);
 }
 
 

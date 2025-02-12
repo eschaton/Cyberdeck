@@ -29,19 +29,7 @@ CYBER_HEADER_BEGIN
 
 
 struct CyberState;
-
-
-/// The states a Cyber962PP can be in.
-enum Cyber962PPState {
-    /// The Peripheral Processor is halted.
-    Cyber962PPState_Halted = 0,
-
-    /// The Peripheral Processor is running.
-    Cyber962PPState_Running = 1,
-
-    /// The Peripheral Processor is shutting down, with no resumption possible.
-    Cyber962PPState_Shutdown = 2,
-};
+struct CyberThread;
 
 
 /// A Cyber962PP implements a Cyber 962 Peripheral Processor.
@@ -57,12 +45,7 @@ struct Cyber962PP {
     CyberWord16 *_storage;
 
     /// The thread this Peripheral Processor runs on.
-    pthread_t _thread;
-
-    /// The running state of this Peripheral Processor, protected by a mutex and condition.
-    ///
-    /// The underlying state is represented by a ``Cyber962PPState``.
-    struct CyberState *_state;
+    struct CyberThread *_thread;
 
     // Registers
 
