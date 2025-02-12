@@ -26,6 +26,7 @@
 #include <Cyber/Cyber180CM.h>
 #include <Cyber/Cyber180CMPort.h>
 #include <Cyber/Cyber180CP.h>
+#include <Cyber/Cyber180CPInstructions.h>
 #include <Cyber/Cyber962.h>
 #include <Cyber/Cyber962IOChannel.h>
 #include <Cyber/Cyber962IOU.h>

@@ -21,6 +21,7 @@
 
 #include <Cyber/Cyber180CMPort.h>
 
+#include "Cyber180CPInstructions_Internal.h"
 #include "CyberThread.h"
 
 #include <assert.h>
@@ -53,6 +54,8 @@ struct Cyber180CP * _Nullable Cyber180CPCreate(struct Cyber962 * _Nonnull system
     };
 
     cp->_thread = CyberThreadCreate(&Cyber180CPThreadFunctions, cp);
+
+    cp->_mode = Cyber180CPModeMonitor;
 
     return cp;
 }
@@ -116,9 +119,59 @@ void Cyber180CPSetCentralMemoryPort(struct Cyber180CP *cp, struct Cyber180CMPort
 }
 
 
+CyberWord64 Cyber180CPTranslateAddress(struct Cyber180CP *cp, CyberWord64 virtualAddress)
+{
+    assert(cp != NULL);
+
+    // TODO: Implement virtual memory.
+
+    return virtualAddress;
+}
+
+
+union Cyber180CPInstructionWord Cyber180CPReadInstructionWord(struct Cyber180CP *cp, CyberWord64 address)
+{
+    union Cyber180CPInstructionWord result;
+
+    assert(cp != NULL);
+
+    CyberWord64 physicalAddress = Cyber180CPTranslateAddress(cp, address);
+
+    // TODO: Implement instruction cache.
+
+    CyberWord16 minimalWord;
+    struct Cyber180CMPort *port = Cyber180CPGetCentralMemoryPort(cp);
+    Cyber180CMPortReadBytesPhysical(port, physicalAddress, (CyberWord8 *)&minimalWord, sizeof(CyberWord16));
+
+    result._raw = ((CyberWord32)minimalWord) << 16;
+
+    CyberWord64 advance = Cyber180CPInstructionAdvance(result);
+    if (advance == 4) {
+        Cyber180CMPortReadBytesPhysical(port, physicalAddress + 2, (CyberWord8 *)&minimalWord, sizeof(CyberWord16));
+        result._raw |= ((CyberWord32)minimalWord);
+    }
+
+    return result;
+}
+
+
 void Cyber180CPSingleStep(struct Cyber180CP *cp)
 {
-    // TODO: Implement instruction decoding and execution.
+    assert(cp != NULL);
+
+    CyberWord64 oldP = cp->_regP;
+    union Cyber180CPInstructionWord instructionWord = Cyber180CPReadInstructionWord(cp, oldP);
+    Cyber180CPInstruction instruction = Cyber180CPInstructionDecode(cp, instructionWord, oldP);
+    if (instruction) {
+        CyberWord64 advance = instruction(cp, instructionWord, oldP);
+        if (advance != ~0x0) {
+            CyberWord64 newP = oldP + advance;
+            cp->_regP = newP;
+        }
+    } else {
+        // TODO: Illegal instruction interrupt
+        assert(false);
+    }
 }
 
 

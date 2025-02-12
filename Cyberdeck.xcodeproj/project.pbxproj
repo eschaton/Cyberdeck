@@ -82,6 +82,7 @@
 				Cyber180CM.h,
 				Cyber180CMPort.h,
 				Cyber180CP.h,
+				Cyber180CPInstructions.h,
 				Cyber962.h,
 				Cyber962IOChannel.h,
 				Cyber962IOU.h,

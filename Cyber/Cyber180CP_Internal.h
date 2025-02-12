@@ -32,6 +32,17 @@ CYBER_HEADER_BEGIN
 struct CyberThread;
 
 
+/// The operating mode of a Central Process.
+enum Cyber180CPMode {
+
+    /// The "normal" operating mode of a CP is "job" mode, where it executs a sequence of instructions.
+    Cyber180CPModeJob = 0,
+
+    /// The operating system itself runs in "monitor" mode, to control the loading, scheduling, execution, and output of user jobs.
+    Cyber180CPModeMonitor = 1,
+};
+
+
 struct Cyber180CP {
 
     /// The system that this is a part of.
@@ -46,12 +57,30 @@ struct Cyber180CP {
     /// The thread that represents this Central Processor.
     struct CyberThread *_thread;
 
+    /// The current operating mode of this Central Processor.
+    enum Cyber180CPMode _mode;
+
     // Registers
 
-    // TODO: Add register definitions.
+    /// Program Address Register (program counter), 64 bits
+    CyberWord64 _regP;
 
-    // FIXME: Flesh out.
+    /// Address Registers, 48 bits
+    CyberWord48 _regA[16];
+
+    /// Operand Registers, 64 bits
+    CyberWord64 _regX[16];
+
+    // FIXME: Flesh out register set.
+
+    // Caching
+
+    // FIXME: Flesh out cache.
 };
+
+
+/// Translate a virtual address to a physical address.
+CYBER_EXPORT CyberWord64 Cyber180CPTranslateAddress(struct Cyber180CP *cp, CyberWord64 virtualAddress);
 
 
 CYBER_HEADER_END
