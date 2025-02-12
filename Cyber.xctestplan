@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "3DA4DFF4-9452-4068-A488-2946B890049E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "addressSanitizer" : {
+      "detectStackUseAfterReturn" : true,
+      "enabled" : true
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:Cyberdeck.xcodeproj",
+        "identifier" : "9F5161F12D27638000AB8296",
+        "name" : "CyberTests"
+      }
+    }
+  ],
+  "version" : 1
+}

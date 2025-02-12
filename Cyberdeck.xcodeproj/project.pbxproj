@@ -72,6 +72,7 @@
 		9F5161F22D27638000AB8296 /* CyberTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F5162462D27F55C00AB8296 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		9F5162472D27F55C00AB8296 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		9FDC3FFD2D5D508600B1FDCE /* Cyber.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cyber.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -172,6 +173,7 @@
 			children = (
 				9F5162472D27F55C00AB8296 /* README.md */,
 				9F5162462D27F55C00AB8296 /* LICENSE */,
+				9FDC3FFD2D5D508600B1FDCE /* Cyber.xctestplan */,
 				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
 				9F5161CA2D27636C00AB8296 /* CyberdeckTests */,
 				9F5161D42D27636C00AB8296 /* CyberdeckUITests */,
