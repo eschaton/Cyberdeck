@@ -119,6 +119,70 @@ void Cyber180CPSetCentralMemoryPort(struct Cyber180CP *cp, struct Cyber180CMPort
 }
 
 
+CyberWord48 Cyber180CPGetA(struct Cyber180CP *cp, int i)
+{
+    assert(cp != NULL);
+    assert((i >= 0) && (i <= 0xf));
+
+    return cp->_regA[i] & 0x0000FFFFFFFFFFFF;
+}
+
+void Cyber180CPSetA(struct Cyber180CP *cp, int i, CyberWord48 value)
+{
+    assert(cp != NULL);
+    assert((i >= 0) && (i <= 0xf));
+
+    if (i != 0) {
+        cp->_regA[i] = value & 0x0000FFFFFFFFFFFF;
+    }
+}
+
+
+CyberWord64 Cyber180CPGetX(struct Cyber180CP *cp, int i)
+{
+    assert(cp != NULL);
+    assert((i >= 0) && (i <= 0xf));
+
+    if (i != 0) {
+        return cp->_regX[i];
+    } else {
+        return 0;
+    }
+}
+
+void Cyber180CPSetX(struct Cyber180CP *cp, int i, CyberWord64 value)
+{
+    assert(cp != NULL);
+    assert((i >= 0) && (i <= 0xf));
+
+    if (i != 0) {
+        cp->_regX[i] = value;
+    }
+}
+
+
+void Cyber180CPWriteBytes(struct Cyber180CP *cp, CyberWord64 virtualAddress, CyberWord8 *buf, CyberWord32 count)
+{
+    assert(cp != NULL);
+
+    CyberWord64 physicalAddress = Cyber180CPTranslateAddress(cp, virtualAddress);
+
+    struct Cyber180CMPort *port = Cyber180CPGetCentralMemoryPort(cp);
+    Cyber180CMPortWriteBytesPhysical(port, physicalAddress, buf, count);
+}
+
+
+void Cyber180CPReadBytes(struct Cyber180CP *cp, CyberWord64 virtualAddress, CyberWord8 *buf, CyberWord32 count)
+{
+    assert(cp != NULL);
+
+    CyberWord64 physicalAddress = Cyber180CPTranslateAddress(cp, virtualAddress);
+
+    struct Cyber180CMPort *port = Cyber180CPGetCentralMemoryPort(cp);
+    Cyber180CMPortReadBytesPhysical(port, physicalAddress, buf, count);
+}
+
+
 CyberWord64 Cyber180CPTranslateAddress(struct Cyber180CP *cp, CyberWord64 virtualAddress)
 {
     assert(cp != NULL);

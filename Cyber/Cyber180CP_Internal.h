@@ -79,8 +79,28 @@ struct Cyber180CP {
 };
 
 
+/// Get the value of the Ai register.
+CYBER_EXPORT CyberWord48 Cyber180CPGetA(struct Cyber180CP *cp, int i);
+
+/// Set the value of the Xi register.
+CYBER_EXPORT void Cyber180CPSetA(struct Cyber180CP *cp, int i, CyberWord48 value);
+
+/// Get the value of the Xi register.
+CYBER_EXPORT CyberWord64 Cyber180CPGetX(struct Cyber180CP *cp, int i);
+
+/// Set the value of the Xi register.
+CYBER_EXPORT void Cyber180CPSetX(struct Cyber180CP *cp, int i, CyberWord64 value);
+
+
 /// Translate a virtual address to a physical address.
 CYBER_EXPORT CyberWord64 Cyber180CPTranslateAddress(struct Cyber180CP *cp, CyberWord64 virtualAddress);
+
+
+/// Write bytes to a virtual address.
+CYBER_EXPORT void Cyber180CPWriteBytes(struct Cyber180CP *cp, CyberWord64 virtualAddress, CyberWord8 *buf, CyberWord32 count);
+
+/// Read bytes from a virtual address.
+CYBER_EXPORT void Cyber180CPReadBytes(struct Cyber180CP *cp, CyberWord64 virtualAddress, CyberWord8 *buf, CyberWord32 count);
 
 
 CYBER_HEADER_END
