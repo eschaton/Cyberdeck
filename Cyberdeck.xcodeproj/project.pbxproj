@@ -124,11 +124,6 @@
 			path = CyberTests;
 			sourceTree = "<group>";
 		};
-		9FBEC1032D35CBE2001300EF /* CyberSwift */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CyberSwift;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,7 +175,6 @@
 				9F5161BA2D27636B00AB8296 /* Cyberdeck */,
 				9F5161CA2D27636C00AB8296 /* CyberdeckTests */,
 				9F5161D42D27636C00AB8296 /* CyberdeckUITests */,
-				9FBEC1032D35CBE2001300EF /* CyberSwift */,
 				9F5161EA2D27638000AB8296 /* Cyber */,
 				9F5161F82D27638000AB8296 /* CyberTests */,
 				9F5161B92D27636B00AB8296 /* Products */,
