@@ -30,105 +30,112 @@ CYBER_SOURCE_BEGIN
 
 Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *processor, union Cyber180CPInstructionWord instructionWord, CyberWord48 address)
 {
+    // All opcodes are 8 bits; even SjkiD instructions effectively use 8-bit opcodes, just putting S in the lower bits. So instruction functions can be handled entirely via table lookup rather than any more complicated dispatching.
+
     CyberWord8 opcode = instructionWord._raw >> 24;
 
     static Cyber180CPInstruction instructions[256] = {
-        NULL, // 0x00
-        NULL, // 0x01
-        NULL, // 0x02
-        NULL, // 0x03
-        NULL, // 0x04
-        NULL, // 0x05
-        NULL, // 0x06
-        NULL, // 0x07
-        NULL, // 0x08
-        NULL, // 0x09
-        NULL, // 0x0a
-        NULL, // 0x0b
-        NULL, // 0x0c
-        NULL, // 0x0d
-        NULL, // 0x0e
-        NULL, // 0x0f
-        NULL, // 0x10
-        NULL, // 0x11
+        Cyber180CPInstruction_HALT, // 0x00
+        Cyber180CPInstruction_SYNC, // 0x01
+        Cyber180CPInstruction_EXCHANGE, // 0x02
+        Cyber180CPInstruction_INTRUPT, // 0x03
+        Cyber180CPInstruction_RETURN, // 0x04
+        Cyber180CPInstruction_PURGE, // 0x05
+        Cyber180CPInstruction_POP, // 0x06
+        Cyber180CPInstruction_PSFSA, // 0x07
+        Cyber180CPInstruction_CPYTX, // 0x08
+        Cyber180CPInstruction_CPYAA, // 0x09
+        Cyber180CPInstruction_CPYXA, // 0x0a
+        Cyber180CPInstruction_CYPAX, // 0x0b
+        Cyber180CPInstruction_CPYRR, // 0x0c
+        Cyber180CPInstruction_CPYXX, // 0x0d
+        Cyber180CPInstruction_CPYSX, // 0x0e
+        Cyber180CPInstruction_CPYXS,  // 0x0f
+
+        Cyber180CPInstruction_INCX, // 0x10
+        Cyber180CPInstruction_DECX, // 0x11
         NULL, // 0x12
         NULL, // 0x13
-        NULL, // 0x14
+        Cyber180CPInstruction_LBSET, // 0x14
         NULL, // 0x15
-        NULL, // 0x16
-        NULL, // 0x17
-        NULL, // 0x18
-        NULL, // 0x19
-        NULL, // 0x1a
-        NULL, // 0x1b
-        NULL, // 0x1c
+        Cyber180CPInstruction_TPAGE, // 0x16
+        Cyber180CPInstruction_LPAGE, // 0x17
+        Cyber180CPInstruction_IORX, // 0x18
+        Cyber180CPInstruction_XORX, // 0x19
+        Cyber180CPInstruction_ANDX, // 0x1a
+        Cyber180CPInstruction_NOTX, // 0x1b
+        Cyber180CPInstruction_INHX, // 0x1c
         NULL, // 0x1d
-        NULL, // 0x1e
-        NULL, // 0x1f
-        NULL, // 0x20
-        NULL, // 0x21
-        NULL, // 0x22
-        NULL, // 0x23
-        NULL, // 0x24
-        NULL, // 0x25
-        NULL, // 0x26
-        NULL, // 0x27
-        NULL, // 0x28
-        NULL, // 0x29
-        NULL, // 0x2a
+        Cyber180CPInstruction_MARK, // 0x1e
+        Cyber180CPInstruction_ENTZOS,  // 0x1f
+
+        Cyber180CPInstruction_ADDR, // 0x20
+        Cyber180CPInstruction_SUBR, // 0x21
+        Cyber180CPInstruction_MULR, // 0x22
+        Cyber180CPInstruction_DIVR, // 0x23
+        Cyber180CPInstruction_ADDX, // 0x24
+        Cyber180CPInstruction_SUBX, // 0x25
+        Cyber180CPInstruction_MULX, // 0x26
+        Cyber180CPInstruction_DIVX, // 0x27
+        Cyber180CPInstruction_INCR, // 0x28
+        Cyber180CPInstruction_DECR, // 0x29
+        Cyber180CPInstruction_ADDAX, // 0x2a
         NULL, // 0x2b
-        NULL, // 0x2c
-        NULL, // 0x2d
-        NULL, // 0x2e
-        NULL, // 0x2f
-        NULL, // 0x30
-        NULL, // 0x31
-        NULL, // 0x32
-        NULL, // 0x33
-        NULL, // 0x34
-        NULL, // 0x35
-        NULL, // 0x36
-        NULL, // 0x37
+        Cyber180CPInstruction_CMPR, // 0x2c
+        Cyber180CPInstruction_CMPX, // 0x2d
+        Cyber180CPInstruction_BRREL, // 0x2e
+        Cyber180CPInstruction_BRDIR,  // 0x2f
+
+        Cyber180CPInstruction_ADDF, // 0x30
+        Cyber180CPInstruction_SUBF, // 0x31
+        Cyber180CPInstruction_MULF, // 0x32
+        Cyber180CPInstruction_DIVF, // 0x33
+        Cyber180CPInstruction_ADDD, // 0x34
+        Cyber180CPInstruction_SUBD, // 0x35
+        Cyber180CPInstruction_MULD, // 0x36
+        Cyber180CPInstruction_DIVD, // 0x37
         NULL, // 0x38
-        NULL, // 0x39
-        NULL, // 0x3a
-        NULL, // 0x3b
-        NULL, // 0x3c
-        NULL, // 0x3d
-        NULL, // 0x3e
-        NULL, // 0x3f
-        NULL, // 0x40
-        NULL, // 0x41
-        NULL, // 0x42
-        NULL, // 0x43
-        NULL, // 0x44
-        NULL, // 0x45
+        Cyber180CPInstruction_ENTX, // 0x39
+        Cyber180CPInstruction_CNIF, // 0x3a
+        Cyber180CPInstruction_CNFI, // 0x3b
+        Cyber180CPInstruction_CMPF, // 0x3c
+        Cyber180CPInstruction_ENTP, // 0x3d
+        Cyber180CPInstruction_ENTN, // 0x3e
+        Cyber180CPInstruction_ENTL,  // 0x3f
+
+        Cyber180CPInstruction_ADDFV, // 0x40
+        Cyber180CPInstruction_SUBFV, // 0x41
+        Cyber180CPInstruction_MULFV, // 0x42
+        Cyber180CPInstruction_DIVFV, // 0x43
+        Cyber180CPInstruction_ADDXV, // 0x44
+        Cyber180CPInstruction_SUBXV, // 0x45
         NULL, // 0x46
         NULL, // 0x47
-        NULL, // 0x48
-        NULL, // 0x49
-        NULL, // 0x4a
-        NULL, // 0x4b
-        NULL, // 0x4c
-        NULL, // 0x4d
+        Cyber180CPInstruction_IORV, // 0x48
+        Cyber180CPInstruction_XORV, // 0x49
+        Cyber180CPInstruction_ANDV, // 0x4a
+        Cyber180CPInstruction_CNIFV, // 0x4b
+        Cyber180CPInstruction_CNFIV, // 0x4c
+        Cyber180CPInstruction_SHFV, // 0x4d
         NULL, // 0x4e
         NULL, // 0x4f
-        NULL, // 0x50
-        NULL, // 0x51
-        NULL, // 0x52
-        NULL, // 0x53
-        NULL, // 0x54
-        NULL, // 0x55
-        NULL, // 0x56
-        NULL, // 0x57
-        NULL, // 0x58
-        NULL, // 0x59
-        NULL, // 0x5a
-        NULL, // 0x5b
-        NULL, // 0x5c
-        NULL, // 0x5d
-        NULL, // 0x5e
-        NULL, // 0x5f
+
+        Cyber180CPInstruction_COMPEQV, // 0x50
+        Cyber180CPInstruction_CMPLTV, // 0x51
+        Cyber180CPInstruction_CMPGEV, // 0x52
+        Cyber180CPInstruction_CMPNEV, // 0x53
+        Cyber180CPInstruction_MRGV, // 0x54
+        Cyber180CPInstruction_GTHV, // 0x55
+        Cyber180CPInstruction_SCTV, // 0x56
+        Cyber180CPInstruction_SUMFV, // 0x57
+        Cyber180CPInstruction_TPSFV, // 0x58
+        Cyber180CPInstruction_TPDFV, // 0x59
+        Cyber180CPInstruction_TSPFV, // 0x5a
+        Cyber180CPInstruction_TDPFV, // 0x5b
+        Cyber180CPInstruction_SUMPFV, // 0x5c
+        Cyber180CPInstruction_GTHIV, // 0x5d
+        Cyber180CPInstruction_SCTIV, // 0x5e
+
         NULL, // 0x60
         NULL, // 0x61
         NULL, // 0x62
@@ -145,14 +152,15 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
         NULL, // 0x6d
         NULL, // 0x6e
         NULL, // 0x6f
-        NULL, // 0x70
-        NULL, // 0x71
-        NULL, // 0x72
-        NULL, // 0x73
-        NULL, // 0x74
-        NULL, // 0x75
-        NULL, // 0x76
-        NULL, // 0x77
+
+        Cyber180CPInstruction_ADDN, // 0x70
+        Cyber180CPInstruction_SUBN, // 0x71
+        Cyber180CPInstruction_MULN, // 0x72
+        Cyber180CPInstruction_DIVN, // 0x73
+        Cyber180CPInstruction_CMPN, // 0x74
+        Cyber180CPInstruction_MOVN, // 0x75
+        Cyber180CPInstruction_MOVB, // 0x76
+        Cyber180CPInstruction_CMPB, // 0x77
         NULL, // 0x78
         NULL, // 0x79
         NULL, // 0x7a
@@ -161,60 +169,64 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
         NULL, // 0x7d
         NULL, // 0x7e
         NULL, // 0x7f
-        NULL, // 0x80
-        NULL, // 0x81
-        NULL, // 0x82
-        NULL, // 0x83
-        NULL, // 0x84
-        NULL, // 0x85
-        NULL, // 0x86
-        NULL, // 0x87
-        NULL, // 0x88
-        NULL, // 0x89
-        NULL, // 0x8a
-        NULL, // 0x8b
-        NULL, // 0x8c
-        NULL, // 0x8d
-        NULL, // 0x8e
-        NULL, // 0x8f
-        NULL, // 0x90
-        NULL, // 0x91
-        NULL, // 0x92
-        NULL, // 0x93
-        NULL, // 0x94
-        NULL, // 0x95
-        NULL, // 0x96
-        NULL, // 0x97
-        NULL, // 0x98
-        NULL, // 0x99
-        NULL, // 0x9a
-        NULL, // 0x9b
-        NULL, // 0x9c
-        NULL, // 0x9d
-        NULL, // 0x9e
-        NULL, // 0x9f
-        NULL, // 0xa0
-        NULL, // 0xa1
-        NULL, // 0xa2
-        NULL, // 0xa3
-        NULL, // 0xa4
-        NULL, // 0xa5
+
+        Cyber180CPInstruction_LMULT, // 0x80
+        Cyber180CPInstruction_SMULT, // 0x81
+        Cyber180CPInstruction_LX, // 0x82
+        Cyber180CPInstruction_SX, // 0x83
+        Cyber180CPInstruction_LA, // 0x84
+        Cyber180CPInstruction_SA, // 0x85
+        Cyber180CPInstruction_LBYTP, // 0x86
+        Cyber180CPInstruction_ENTC, // 0x87
+        Cyber180CPInstruction_LBIT, // 0x88
+        Cyber180CPInstruction_SBIT, // 0x89
+        Cyber180CPInstruction_ADDRQ, // 0x8a
+        Cyber180CPInstruction_ADDXQ, // 0x8b
+        Cyber180CPInstruction_MULRQ, // 0x8c
+        Cyber180CPInstruction_ENTE, // 0x8d
+        Cyber180CPInstruction_ADDAQ, // 0x8e
+        Cyber180CPInstruction_ADDPXQ, // 0x8f
+
+        Cyber180CPInstruction_BRREQ, // 0x90
+        Cyber180CPInstruction_BRRNE, // 0x91
+        Cyber180CPInstruction_BRRGT, // 0x92
+        Cyber180CPInstruction_BRRGE, // 0x93
+        Cyber180CPInstruction_BRXEQ, // 0x94
+        Cyber180CPInstruction_BRXNE, // 0x95
+        Cyber180CPInstruction_BRXGT, // 0x96
+        Cyber180CPInstruction_BRXGE, // 0x97
+        Cyber180CPInstruction_BRFEQ, // 0x98
+        Cyber180CPInstruction_BRFNE, // 0x99
+        Cyber180CPInstruction_BRFGT, // 0x9a
+        Cyber180CPInstruction_BRFGE, // 0x9b
+        Cyber180CPInstruction_BRINC, // 0x9c
+        Cyber180CPInstruction_BRSEG, // 0x9d
+        Cyber180CPInstruction_BRxxx, // 0x9e
+        Cyber180CPInstruction_BRCR,  // 0x9f
+
+        Cyber180CPInstruction_LAI, // 0xa0
+        Cyber180CPInstruction_SAI, // 0xa1
+        Cyber180CPInstruction_LXI, // 0xa2
+        Cyber180CPInstruction_SXI, // 0xa3
+        Cyber180CPInstruction_LBYT, // 0xa4
+        Cyber180CPInstruction_SBYT, // 0xa5
         NULL, // 0xa6
-        NULL, // 0xa7
-        NULL, // 0xa8
-        NULL, // 0xa9
-        NULL, // 0xaa
+        Cyber180CPInstruction_ADDAD, // 0xa7
+        Cyber180CPInstruction_SHFC, // 0xa8
+        Cyber180CPInstruction_SHFX, // 0xa9
+        Cyber180CPInstruction_SHFR, // 0xaa
         NULL, // 0xab
-        NULL, // 0xac
-        NULL, // 0xad
-        NULL, // 0xae
+        Cyber180CPInstruction_ISOM, // 0xac
+        Cyber180CPInstruction_ISOB, // 0xad
+        Cyber180CPInstruction_INSB, // 0xae
         NULL, // 0xaf
-        NULL, // 0xb0
-        NULL, // 0xb1
-        NULL, // 0xb2
-        NULL, // 0xb3
-        NULL, // 0xb4
-        NULL, // 0xb5
+
+        Cyber180CPInstruction_CALLREL, // 0xb0
+        Cyber180CPInstruction_KEYPOINT, // 0xb1
+        Cyber180CPInstruction_MULXQ, // 0xb2
+        Cyber180CPInstruction_ENTA, // 0xb3
+        Cyber180CPInstruction_CMPXA, // 0xb4
+        Cyber180CPInstruction_CALLSEG, // 0xb5
         NULL, // 0xb6
         NULL, // 0xb7
         NULL, // 0xb8
@@ -222,9 +234,10 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
         NULL, // 0xba
         NULL, // 0xbb
         NULL, // 0xbc
-        NULL, // 0xbd
-        NULL, // 0xbe
-        NULL, // 0xbf
+        Cyber180CPInstruction_RESERVEDBD, // 0xbd
+        Cyber180CPInstruction_RESERVEDBE, // 0xbe
+        Cyber180CPInstruction_RESERVEDBF, // 0xbf
+
         Cyber180CPInstruction_EXECUTE, // 0xc0
         Cyber180CPInstruction_EXECUTE, // 0xc1
         Cyber180CPInstruction_EXECUTE, // 0xc2
@@ -233,14 +246,15 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
         Cyber180CPInstruction_EXECUTE, // 0xc5
         Cyber180CPInstruction_EXECUTE, // 0xc6
         Cyber180CPInstruction_EXECUTE, // 0xc7
-        NULL, // 0xc8
-        NULL, // 0xc9
-        NULL, // 0xca
-        NULL, // 0xcb
-        NULL, // 0xcc
-        NULL, // 0xcd
-        NULL, // 0xce
-        NULL, // 0xcf
+        Cyber180CPInstruction_EXECUTE, // 0xc8
+        Cyber180CPInstruction_EXECUTE, // 0xc9
+        Cyber180CPInstruction_EXECUTE, // 0xca
+        Cyber180CPInstruction_EXECUTE, // 0xcb
+        Cyber180CPInstruction_EXECUTE, // 0xcc
+        Cyber180CPInstruction_EXECUTE, // 0xcd
+        Cyber180CPInstruction_EXECUTE, // 0xce
+        Cyber180CPInstruction_EXECUTE, // 0xcf
+
         Cyber180CPInstruction_LBYTS, // 0xd0
         Cyber180CPInstruction_LBYTS, // 0xd1
         Cyber180CPInstruction_LBYTS, // 0xd2
@@ -257,22 +271,24 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
         Cyber180CPInstruction_SBYTS, // 0xdd
         Cyber180CPInstruction_SBYTS, // 0xde
         Cyber180CPInstruction_SBYTS, // 0xdf
+
         NULL, // 0xe0
         NULL, // 0xe1
         NULL, // 0xe2
         NULL, // 0xe3
-        NULL, // 0xe4
-        NULL, // 0xe5
+        Cyber180CPInstruction_SCLN, // 0xe4
+        Cyber180CPInstruction_SCLR, // 0xe5
         NULL, // 0xe6
         NULL, // 0xe7
         NULL, // 0xe8
-        NULL, // 0xe9
+        Cyber180CPInstruction_CMPC, // 0xe9
         NULL, // 0xea
-        NULL, // 0xeb
+        Cyber180CPInstruction_TRANB, // 0xeb
         NULL, // 0xec
-        NULL, // 0xed
+        Cyber180CPInstruction_EDIT, // 0xed
         NULL, // 0xee
         NULL, // 0xef
+
         NULL, // 0xf0
         NULL, // 0xf1
         NULL, // 0xf2
@@ -334,45 +350,936 @@ CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instruc
 
 // MARK: - Instruction Implementations
 
+CyberWord64 Cyber180CPInstruction_HALT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SYNC(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_EXCHANGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_INTRUPT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_RETURN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_PURGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_POP(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_PSFSA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYTX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYAA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYXA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CYPAX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYRR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYXX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYSX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CPYXS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_INCX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DECX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LBSET(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_TPAGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LPAGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_IORX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_XORX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ANDX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_NOTX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_INHX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MARK(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTZOS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DIVR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DIVX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_INCR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DECR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDAX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRREL(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRDIR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DIVF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDD(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBD(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULD(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DIVD(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CNIF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CNFI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTP(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTL(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DIVFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDXV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBXV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_IORV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_XORV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ANDV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CNIFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CNFIV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SHFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_COMPEQV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPLTV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPGEV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPNEV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MRGV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_GTHV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SCTV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUMFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_TPSFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_TPDFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_TSPFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_TDPFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUMPFV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_GTHIV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SCTIV(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SUBN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_DIVN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MOVN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MOVB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LMULT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SMULT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LBYTP(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTC(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LBIT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SBIT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDRQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDXQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULRQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDAQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDPXQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+
+CyberWord64 Cyber180CPInstruction_BRREQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRRNE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRRGT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRRGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRXEQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRXNE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRXGT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRXGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRFEQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRFNE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRFGT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRFGE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRINC(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRSEG(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRxxx(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_BRCR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LAI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SAI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LXI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SXI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_LBYT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SBYT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ADDAD(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SHFC(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SHFX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_SHFR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ISOM(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ISOB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_INSB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CALLREL(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_KEYPOINT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_MULXQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_ENTA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CMPXA(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_CALLSEG(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_RESERVEDBD(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_RESERVEDBE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
+CyberWord64 Cyber180CPInstruction_RESERVEDBF(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
+{
+    return 0;// TODO: Implement
+}
+
+
 CyberWord64 Cyber180CPInstruction_EXECUTE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
+
 
 CyberWord64 Cyber180CPInstruction_LBYTS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
 
+
 CyberWord64 Cyber180CPInstruction_SBYTS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
+
 
 CyberWord64 Cyber180CPInstruction_SCLN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
 
+
 CyberWord64 Cyber180CPInstruction_SCLR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
+
 
 CyberWord64 Cyber180CPInstruction_CMPC(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
 
+
 CyberWord64 Cyber180CPInstruction_TRANB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
 
+
 CyberWord64 Cyber180CPInstruction_EDIT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     return 0;// TODO: Implement
 }
+
 
 CyberWord64 Cyber180CPInstruction_SCNB(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
