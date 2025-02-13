@@ -68,6 +68,55 @@ typedef uint64_t CyberWord60;
 typedef uint64_t CyberWord64;
 
 
+// MARK: - Endianness
+
+#if BIG_ENDIAN
+#define CYBER_BIG_ENDIAN 1
+#else
+#define CYBER_LITTLE_ENDIAN 1
+#endif
+
+/// Swap a 16-bit Cyber word if necessary; the Cyber is big-endian.
+static inline CyberWord16 CyberWord16Swap(CyberWord16 word)
+{
+#if CYBER_BIG_ENDIAN
+    return word;
+#else
+    return ((word & 0xFF00) >> 8) | ((word & 0x00FF) << 8);
+#endif
+}
+
+/// Swap a 32-bit Cyber word if necessary; the Cyber is big-endian.
+static inline CyberWord32 CyberWord32Swap(CyberWord32 word)
+{
+#if CYBER_BIG_ENDIAN
+    return word;
+#else
+    return (  ((word & 0xFF000000) >> 24)
+            | ((word & 0x00FF0000) >>  8)
+            | ((word & 0x0000FF00) <<  8)
+            | ((word & 0x000000FF) << 24));
+#endif
+}
+
+/// Swap a 64-bit Cyber word if necessary; the Cyber is big-endian.
+static inline CyberWord64 CyberWord64Swap(CyberWord64 word)
+{
+#if CYBER_BIG_ENDIAN
+    return word;
+#else
+    return (  ((word & 0xFF00000000000000) >> 56)
+            | ((word & 0x00FF000000000000) >> 40)
+            | ((word & 0x0000FF0000000000) >> 24)
+            | ((word & 0x000000FF00000000) >>  8)
+            | ((word & 0x00000000FF000000) <<  8)
+            | ((word & 0x0000000000FF0000) << 24)
+            | ((word & 0x000000000000FF00) << 40)
+            | ((word & 0x00000000000000FF) << 56));
+#endif
+}
+
+
 CYBER_HEADER_END
 
 

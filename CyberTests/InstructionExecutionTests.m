@@ -124,6 +124,24 @@ NS_ASSUME_NONNULL_BEGIN
     XCTAssertEqual(0xAB, Cyber180CPGetX(_processor, 0));
 }
 
+- (void)testInstruction_LX
+{
+    union Cyber180CPInstructionWord instruction;
+    instruction._jkQ.opcode = 0x82;
+    instruction._jkQ.j = 0x1;
+    instruction._jkQ.k = 0x2;
+    instruction._jkQ.Q = 0x3;
+
+    // Set up the registers and memory.
+    Cyber180CPSetA(_processor, 0x1, 0x100);
+    CyberWord8 wordbytes[8] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
+    Cyber180CPWriteBytes(_processor, 0x100 + (0x3 * 8), wordbytes, 8);
+
+    CyberWord64 advance = Cyber180CPInstruction_LX(_processor, instruction, 0x00);
+    XCTAssertEqual(4, advance);
+    XCTAssertEqual(0x123456789abcdef0, Cyber180CPGetX(_processor, 2));
+}
+
 - (void)testInstruction_ENTE
 {
     // 0x8D000063 = ENTE X0,63(16)
@@ -136,6 +154,27 @@ NS_ASSUME_NONNULL_BEGIN
     CyberWord64 advance = Cyber180CPInstruction_ENTE(_processor, instruction, 0x00);
     XCTAssertEqual(4, advance);
     XCTAssertEqual(0x63LL, Cyber180CPGetX(_processor, 0));
+}
+
+- (void)testInstruction_LXI
+{
+    // Xk = (Aj + 8*D + 8*XiR)
+    union Cyber180CPInstructionWord instruction;
+    instruction._jkiD.opcode = 0xA2;
+    instruction._jkiD.j = 0x1;
+    instruction._jkiD.k = 0x2;
+    instruction._jkiD.i = 0x3;
+    instruction._jkiD.D = 0x4;
+
+    // Set up the registers and memory.
+    Cyber180CPSetA(_processor, 0x1, 0x100);
+    Cyber180CPSetX(_processor, 0x3, 0x3);
+    CyberWord8 wordbytes[8] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
+    Cyber180CPWriteBytes(_processor, 0x100 + ((0x3 * 8) + (0x4 * 8)), wordbytes, 8);
+
+    CyberWord64 advance = Cyber180CPInstruction_LXI(_processor, instruction, 0x00);
+    XCTAssertEqual(4, advance);
+    XCTAssertEqual(0x123456789abcdef0, Cyber180CPGetX(_processor, 0x2));
 }
 
 @end

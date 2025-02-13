@@ -368,6 +368,26 @@ CyberWord64 Cyber180CPInstruction_CalculateBitMask(CyberWord64 bit_pos, CyberWor
     return mask;
 }
 
+CyberWord48 Cyber180CPInstruction_CalculateAddressUsingSignedDisplacement16(CyberWord48 Aj, CyberWord16 Q)
+{
+    int16_t signed_Q = Q;
+    int32_t signed_displacement = signed_Q << 3;
+    uint32_t unsigned_AjR32 = Aj & 0x0000FFFFFFFF;
+    uint32_t unsigned_adjusted_AjR32 = (unsigned_AjR32 + signed_displacement);
+    CyberWord48 PVA = (Aj & 0xFFFF00000000) | ((CyberWord48) unsigned_adjusted_AjR32);
+    return PVA;
+}
+
+CyberWord48 Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(CyberWord48 Aj, CyberWord32 XiR, CyberWord12 D)
+{
+    uint32_t unsigned_displacement = ((uint32_t)D) << 3;
+    uint32_t unsigned_index = XiR << 3;
+    uint32_t unsigned_AjR32 = Aj & 0x0000FFFFFFFF;
+    uint32_t unsigned_adjusted_AjR32 = unsigned_AjR32 + (unsigned_index + unsigned_displacement);
+    CyberWord48 PVA = (Aj & 0xFFFF00000000) | ((CyberWord48) unsigned_adjusted_AjR32);
+    return PVA;
+}
+
 
 // MARK: - Instruction Implementations
 
@@ -953,18 +973,18 @@ CyberWord64 Cyber180CPInstruction_SMULT(struct Cyber180CP *processor, union Cybe
 }
 
 
-/// Load Xk from (Aj displaced by 8 times Q) (2.2.1.2, 82jkQ)
+/// Load `Xk` from (`Aj` displaced by `8*Q`) (2.2.1.2, `82jkQ`)
 CyberWord64 Cyber180CPInstruction_LX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t Aj = Cyber180CPGetA(processor, word._jkQ.Q);
-    int64_t signed_Q = Signed64FromSigned16ViaExtend(word._jkQ.Q);
-    CyberWord64 sourceVirtualAddress = Aj + (signed_Q * 8);
-    if ((sourceVirtualAddress % 8) != 0) {
-        // TODO: Detect Address Specification Error (2.8.1.5)
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._jkQ.j);
+    CyberWord16 Q = word._jkQ.Q;
+    CyberWord64 sourcePVA = Cyber180CPInstruction_CalculateAddressUsingSignedDisplacement16(Aj, Q);
+    if ((sourcePVA % 8) != 0) {
+        // TODO: Address Specification Error (2.8.1.5)
     }
     CyberWord64 value;
-    Cyber180CPReadBytes(processor, sourceVirtualAddress, (CyberWord8 *)&value, 8);
-    Cyber180CPSetX(processor, word._jkQ.k, value);
+    Cyber180CPReadBytes(processor, sourcePVA, (CyberWord8 *)&value, 8);
+    Cyber180CPSetX(processor, word._jkQ.k, CyberWord64Swap(value));
     return 4;
 }
 
@@ -1169,9 +1189,20 @@ CyberWord64 Cyber180CPInstruction_SAI(struct Cyber180CP *processor, union Cyber1
 }
 
 
+/// Load `Xk` from (`Aj` displaced by `8*D` and indexed by `8*XiR`) (2.2.1.2.a, `A2jkiD`)
 CyberWord64 Cyber180CPInstruction_LXI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    uint32_t XiR = (Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF);
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._jkiD.j);
+    CyberWord12 D = word._jkiD.D;
+    CyberWord48 sourcePVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    if ((sourcePVA % 8) != 0) {
+        // TODO: Address Specification Error (2.8.1.5)
+    }
+    CyberWord64 value;
+    Cyber180CPReadBytes(processor, sourcePVA, (CyberWord8 *)&value, 8);
+    Cyber180CPSetX(processor, word._jkQ.k, CyberWord64Swap(value));
+    return 4;
 }
 
 
