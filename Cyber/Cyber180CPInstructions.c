@@ -973,7 +973,7 @@ CyberWord64 Cyber180CPInstruction_SMULT(struct Cyber180CP *processor, union Cybe
 }
 
 
-/// Load `Xk` from (`Aj` displaced by `8*Q`) (2.2.1.2, `82jkQ`)
+/// Load `Xk` from (`Aj` displaced by `8*Q`) (2.2.1.2.b, `82jkQ`)
 CyberWord64 Cyber180CPInstruction_LX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
     CyberWord48 Aj = Cyber180CPGetA(processor, word._jkQ.j);
@@ -989,9 +989,19 @@ CyberWord64 Cyber180CPInstruction_LX(struct Cyber180CP *processor, union Cyber18
 }
 
 
+/// Store `Xk` at (`Aj` displaced by `8*Q`) (2.2.1.2.d, `83jkQ`)
 CyberWord64 Cyber180CPInstruction_SX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._jkQ.j);
+    CyberWord16 Q = word._jkQ.Q;
+    CyberWord64 destinationPVA = Cyber180CPInstruction_CalculateAddressUsingSignedDisplacement16(Aj, Q);
+    if ((destinationPVA % 8) != 0) {
+        // TODO: Address Specification Error (2.8.1.5)
+    }
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jkQ.k);
+    CyberWord64 value = CyberWord64Swap(Xk);
+    Cyber180CPWriteBytes(processor, destinationPVA, (CyberWord8 *)&value, 8);
+    return 4;
 }
 
 
@@ -1206,9 +1216,20 @@ CyberWord64 Cyber180CPInstruction_LXI(struct Cyber180CP *processor, union Cyber1
 }
 
 
+/// Store `Xk` from (`Aj` displaced by `8*D` and indexed by `8*XiR`) (2.2.1.2.c, `A3jkiD`)
 CyberWord64 Cyber180CPInstruction_SXI(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    uint32_t XiR = (Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF);
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._jkiD.j);
+    CyberWord12 D = word._jkiD.D;
+    CyberWord48 destinationPVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    if ((destinationPVA % 8) != 0) {
+        // TODO: Address Specification Error (2.8.1.5)
+    }
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jkQ.k);
+    CyberWord64 value = CyberWord64Swap(Xk);
+    Cyber180CPWriteBytes(processor, destinationPVA, (CyberWord8 *)&value, 8);
+    return 4;
 }
 
 
