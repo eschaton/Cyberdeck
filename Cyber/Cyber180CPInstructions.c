@@ -677,9 +677,12 @@ CyberWord64 Cyber180CPInstruction_DIVD(struct Cyber180CP *processor, union Cyber
 }
 
 
+/// Enter X1 with logical jk (2.2.6.3.b, 39jk)
 CyberWord64 Cyber180CPInstruction_ENTX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 immediate = (((CyberWord64) word._jk.j) << 4) | ((CyberWord64) word._jk.k);
+    Cyber180CPSetX(processor, 1, immediate);
+    return 2;
 }
 
 
@@ -701,21 +704,30 @@ CyberWord64 Cyber180CPInstruction_CMPF(struct Cyber180CP *processor, union Cyber
 }
 
 
+/// Enter Xk with plus j (2.2.6.1.a, 3Djk)
 CyberWord64 Cyber180CPInstruction_ENTP(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 immediate = word._jk.j;
+    Cyber180CPSetX(processor, word._jk.k, immediate);
+    return 2;
 }
 
 
+/// Enter Xk with minus j (2.2.6.1.b, 3Ejk)
 CyberWord64 Cyber180CPInstruction_ENTN(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 immediate = word._jk.j;
+    Cyber180CPSetX(processor, word._jk.k, ~immediate);
+    return 2;
 }
 
 
+/// Enter X0 with logical jk (2.2.6.3.a, 3Fjk)
 CyberWord64 Cyber180CPInstruction_ENTL(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 immediate = (((CyberWord64) word._jk.j) << 4) | ((CyberWord64) word._jk.k);
+    Cyber180CPSetX(processor, 0, immediate);
+    return 2;
 }
 
 

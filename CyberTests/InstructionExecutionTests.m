@@ -76,10 +76,62 @@ NS_ASSUME_NONNULL_BEGIN
     XCTAssertEqual(0x3E00000000000000LL, Cyber180CPInstruction_CalculateBitMask(2,5));
 }
 
+- (void)testInstruction_ENTX
+{
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x39;
+    instruction._jk.j = 0xA;
+    instruction._jk.k = 0xB;
+
+    CyberWord64 advance = Cyber180CPInstruction_ENTX(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+    XCTAssertEqual(0xAB, Cyber180CPGetX(_processor, 1));
+}
+
+- (void)testInstruction_ENTP
+{
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x3d;
+    instruction._jk.j = 0xA;
+    instruction._jk.k = 3;
+
+    CyberWord64 advance = Cyber180CPInstruction_ENTP(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+    XCTAssertEqual(0xALL, Cyber180CPGetX(_processor, 3));
+}
+
+- (void)testInstruction_ENTN
+{
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x3e;
+    instruction._jk.j = 0xA;
+    instruction._jk.k = 3;
+
+    CyberWord64 advance = Cyber180CPInstruction_ENTN(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+    XCTAssertEqual(0xFFFFFFFFFFFFFFF5LL, Cyber180CPGetX(_processor, 3));
+}
+
+- (void)testInstruction_ENTL
+{
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x3f;
+    instruction._jk.j = 0xA;
+    instruction._jk.k = 0xB;
+
+    CyberWord64 advance = Cyber180CPInstruction_ENTL(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+    XCTAssertEqual(0xAB, Cyber180CPGetX(_processor, 0));
+}
+
 - (void)testInstruction_ENTE
 {
-    // 0x8D000063 = ENTE X0,63(16) - should put 0x63 in x0
-    union Cyber180CPInstructionWord instruction; instruction._raw = 0x8D000063;
+    // 0x8D000063 = ENTE X0,63(16)
+    union Cyber180CPInstructionWord instruction;
+    instruction._jkQ.opcode = 0x8d;
+    instruction._jkQ.j = 0;
+    instruction._jkQ.k = 0;
+    instruction._jkQ.Q = 0x63;
 
     CyberWord64 advance = Cyber180CPInstruction_ENTE(_processor, instruction, 0x00);
     XCTAssertEqual(4, advance);
