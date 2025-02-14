@@ -76,6 +76,84 @@ NS_ASSUME_NONNULL_BEGIN
     XCTAssertEqual(0x3E00000000000000LL, Cyber180CPInstruction_CalculateBitMask(2,5));
 }
 
+- (void)testInstruction_INCX
+{
+    // Xk = Xk + j
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x10;
+    instruction._jk.j = 0x3;
+    instruction._jk.k = 0x2;
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234);
+    CyberWord64 advance = Cyber180CPInstruction_INCX(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(0x1237, X2);
+
+    // TODO: Test INCX overflow.
+}
+
+- (void)testInstruction_DECX
+{
+    // Xk = Xk + j
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x11;
+    instruction._jk.j = 0x3;
+    instruction._jk.k = 0x2;
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234);
+    CyberWord64 advance = Cyber180CPInstruction_DECX(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(0x1231, X2);
+
+    // TODO: Test DECX overflow.
+}
+
+- (void)testInstruction_ADDX
+{
+    // Xk = Xk + Xj
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x10;
+    instruction._jk.j = 0x3;
+    instruction._jk.k = 0x2;
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234);
+    Cyber180CPSetX(_processor, 3, 0x5678);
+    CyberWord64 advance = Cyber180CPInstruction_ADDX(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(0x68AC, X2);
+
+    // TODO: Test ADDX overflow.
+}
+
+- (void)testInstruction_SUBX
+{
+    // Xk = Xk + j
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x11;
+    instruction._jk.j = 0x3;
+    instruction._jk.k = 0x2;
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234);
+    Cyber180CPSetX(_processor, 3, 0x5678);
+    CyberWord64 advance = Cyber180CPInstruction_SUBX(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(-0x4444, X2);
+
+    // TODO: Test SUBX overflow.
+}
+
 - (void)testInstruction_ENTX
 {
     union Cyber180CPInstructionWord instruction;
@@ -163,6 +241,28 @@ NS_ASSUME_NONNULL_BEGIN
     Cyber180CPReadBytes(_processor, 0x100 + (0x3 * 8), wordBytes, 8);
     CyberWord8 expectedBytes[8] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
     XCTAssert(memcmp(expectedBytes, wordBytes, 8) == 0);
+}
+
+- (void)testInstruction_ADDXQ
+{
+    // Xk = Xk + Xj + Q
+    union Cyber180CPInstructionWord instruction;
+    instruction._jkQ.opcode = 0x8B;
+    instruction._jkQ.j = 0x3;
+    instruction._jkQ.k = 0x2;
+    instruction._jkQ.Q = 0xFFFF; // -1
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234);
+    Cyber180CPSetX(_processor, 3, 0x5678);
+    CyberWord64 advance = Cyber180CPInstruction_ADDXQ(_processor, instruction, 0x00);
+    XCTAssertEqual(4, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(0x68AB, X2);
+
+    // TODO: Test ADDX overflow.
+
 }
 
 - (void)testInstruction_ENTE
