@@ -1243,15 +1243,65 @@ CyberWord64 Cyber180CPInstruction_SXI(struct Cyber180CP *processor, union Cyber1
 }
 
 
+/// Load Bytes to `Xk` from (`Aj` displaced by `D` and indexed by `XiR`), Length Per `X0` (2.2.1.3.a, `A4jkiD`)
+///
+/// This should be the same as `LBYTS` except instead of `S` the number of bytes is specified by the rightmost 3 bits of `X0` plus `1`.
 CyberWord64 Cyber180CPInstruction_LBYT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._jkiD.j);
+    CyberWord32 XiR = Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF;
+    CyberWord12 D = word._jkiD.D;
+
+    CyberWord48 sourcePVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    CyberWord64 X0 = Cyber180CPGetX(processor, 0);
+    CyberWord32 count = (X0 & 0x0000000000000007LL) + 1;
+
+    CyberWord8 bytes[8] = { 0 };
+    Cyber180CPReadBytes(processor, sourcePVA, bytes, count);
+
+    // Right-justify the bytes before assigning to Xk.
+    CyberWord64 value = ((  (((CyberWord64)bytes[0]) << 56) | (((CyberWord64)bytes[1]) << 48)
+                          | (((CyberWord64)bytes[2]) << 40) | (((CyberWord64)bytes[3]) << 32)
+                          | (((CyberWord64)bytes[4]) << 24) | (((CyberWord64)bytes[5]) << 16)
+                          | (((CyberWord64)bytes[6]) <<  8) | (((CyberWord64)bytes[7]) <<  0))
+                         >> ((8 - ((CyberWord64)count)) * 8));
+
+    // Don't need to swap after load because the above swaps for us if necessary.
+    Cyber180CPSetX(processor, word._jkiD.k, value);
+
+    return 4;
 }
 
 
+/// Store Bytes from `Xk` at (`Aj` displaced by `D` and indexed by `XiR`), Length Per `X0` (2.2.1.3.a, `A4jkiD`)
+///
+/// This should be the same as `SBYTS` except instead of `S` the number of bytes is specified by the rightmost 3 bits of `X0` plus `1`.
 CyberWord64 Cyber180CPInstruction_SBYT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._jkiD.j);
+    CyberWord32 XiR = Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF;
+    CyberWord12 D = word._jkiD.D;
+
+    CyberWord48 destinationPVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    CyberWord64 X0 = Cyber180CPGetX(processor, 0);
+    CyberWord32 count = (X0 & 0x0000000000000007LL) + 1;
+
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jkiD.k);
+    CyberWord8 bytes[8] = {
+        ((Xk >> 56) & 0xFF),
+        ((Xk >> 48) & 0xFF),
+        ((Xk >> 40) & 0xFF),
+        ((Xk >> 32) & 0xFF),
+        ((Xk >> 24) & 0xFF),
+        ((Xk >> 16) & 0xFF),
+        ((Xk >>  8) & 0xFF),
+        ((Xk >>  0) & 0xFF),
+    };
+
+    // Don't need to swap before store as the above swaps for us if necessary.
+    Cyber180CPWriteBytes(processor, destinationPVA, &bytes[8-count], count);
+
+    return 4;
 }
 
 
@@ -1433,8 +1483,7 @@ CyberWord64 Cyber180CPInstruction_SBYTS(struct Cyber180CP *processor, union Cybe
         ((Xk >>  0) & 0xFF),
     };
 
-    // Don't need to swap before writing as the above swaps for us if necessary.
-
+    // Don't need to swap before store as the above swaps for us if necessary.
     Cyber180CPWriteBytes(processor, destinationPVA, &bytes[8-count], count);
 
     return 4;
