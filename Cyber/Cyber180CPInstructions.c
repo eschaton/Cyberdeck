@@ -380,6 +380,16 @@ CyberWord48 Cyber180CPInstruction_CalculateAddressUsingSignedDisplacement16(Cybe
 
 CyberWord48 Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(CyberWord48 Aj, CyberWord32 XiR, CyberWord12 D)
 {
+    uint32_t unsigned_displacement = D;
+    uint32_t unsigned_index = XiR;
+    uint32_t unsigned_AjR32 = Aj & 0x0000FFFFFFFF;
+    uint32_t unsigned_adjusted_AjR32 = unsigned_AjR32 + (unsigned_index + unsigned_displacement);
+    CyberWord48 PVA = (Aj & 0xFFFF00000000) | ((CyberWord48) unsigned_adjusted_AjR32);
+    return PVA;
+}
+
+CyberWord48 Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12Times8(CyberWord48 Aj, CyberWord32 XiR, CyberWord12 D)
+{
     uint32_t unsigned_displacement = ((uint32_t)D) << 3;
     uint32_t unsigned_index = XiR << 3;
     uint32_t unsigned_AjR32 = Aj & 0x0000FFFFFFFF;
@@ -1205,7 +1215,7 @@ CyberWord64 Cyber180CPInstruction_LXI(struct Cyber180CP *processor, union Cyber1
     uint32_t XiR = (Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF);
     CyberWord48 Aj = Cyber180CPGetA(processor, word._jkiD.j);
     CyberWord12 D = word._jkiD.D;
-    CyberWord48 sourcePVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    CyberWord48 sourcePVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12Times8(Aj, XiR, D);
     if ((sourcePVA % 8) != 0) {
         // TODO: Address Specification Error (2.8.1.5)
     }
@@ -1222,7 +1232,7 @@ CyberWord64 Cyber180CPInstruction_SXI(struct Cyber180CP *processor, union Cyber1
     uint32_t XiR = (Cyber180CPGetXOr0(processor, word._jkiD.i) & 0x00000000FFFFFFFF);
     CyberWord48 Aj = Cyber180CPGetA(processor, word._jkiD.j);
     CyberWord12 D = word._jkiD.D;
-    CyberWord48 destinationPVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    CyberWord48 destinationPVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12Times8(Aj, XiR, D);
     if ((destinationPVA % 8) != 0) {
         // TODO: Address Specification Error (2.8.1.5)
     }
@@ -1374,24 +1384,59 @@ CyberWord64 Cyber180CPInstruction_EXECUTE(struct Cyber180CP *processor, union Cy
 }
 
 
+/// Load Bytes to Xk from (`Aj` displaced by `D` and indexed by `XiR`), Length per S (2.2.1.1.a, `DSjkiD`)
 CyberWord64 Cyber180CPInstruction_LBYTS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._SjkiD.j);
+    CyberWord32 XiR = Cyber180CPGetXOr0(processor, word._SjkiD.i) & 0x00000000FFFFFFFF;
+    CyberWord12 D = word._SjkiD.D;
+
+    CyberWord48 sourcePVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    CyberWord32 count = word._SjkiD.S + 1;
+
+    CyberWord8 bytes[8] = { 0 };
+    Cyber180CPReadBytes(processor, sourcePVA, bytes, count);
+
+    // Right-justify the bytes before assigning to Xk.
+    CyberWord64 value = ((  (((CyberWord64)bytes[0]) << 56) | (((CyberWord64)bytes[1]) << 48)
+                          | (((CyberWord64)bytes[2]) << 40) | (((CyberWord64)bytes[3]) << 32)
+                          | (((CyberWord64)bytes[4]) << 24) | (((CyberWord64)bytes[5]) << 16)
+                          | (((CyberWord64)bytes[6]) <<  8) | (((CyberWord64)bytes[7]) <<  0))
+                         >> ((8 - ((CyberWord64)count)) * 8));
+
+    // Don't need to swap after load because the above swaps for us if necessary.
+    Cyber180CPSetX(processor, word._SjkiD.k, value);
+
+    return 4;
 }
 
 
-/// Store Bytes from Xk at (Aj displaced by D and indexed by XiR), Length Per S (2.2.1.1, DSjkiD)
+/// Store Bytes from Xk at (`Aj` displaced by `D` and indexed by `XiR`), Length Per S (2.2.1.1.b, `DSjkiD`)
 CyberWord64 Cyber180CPInstruction_SBYTS(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    CyberWord32 length = word._SjkiD.S - 7;
-    int64_t Aj = processor->_regA[word._SjkiD.j];
-    int i = word._SjkiD.i;
-    int64_t XiR = Cyber180CPGetX(processor, i) & 0x00000000FFFFFFFF;
-    int64_t D = word._SjkiD.D;
-    int64_t destinationVirtualAddress = Aj + (D + XiR & 0x00000000FFFFFFFF);
-    int k = word._SjkiD.k;
-    CyberWord64 Xk = Cyber180CPGetX(processor, k);
-    Cyber180CPWriteBytes(processor, destinationVirtualAddress, (CyberWord8 *)&Xk, length);
+    CyberWord48 Aj = Cyber180CPGetA(processor, word._SjkiD.j);
+    CyberWord32 XiR = Cyber180CPGetXOr0(processor, word._SjkiD.i) & 0x00000000FFFFFFFF;
+    CyberWord12 D = word._SjkiD.D;
+
+    CyberWord48 destinationPVA = Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(Aj, XiR, D);
+    CyberWord32 count = word._SjkiD.S - 7;
+
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._SjkiD.k);
+    CyberWord8 bytes[8] = {
+        ((Xk >> 56) & 0xFF),
+        ((Xk >> 48) & 0xFF),
+        ((Xk >> 40) & 0xFF),
+        ((Xk >> 32) & 0xFF),
+        ((Xk >> 24) & 0xFF),
+        ((Xk >> 16) & 0xFF),
+        ((Xk >>  8) & 0xFF),
+        ((Xk >>  0) & 0xFF),
+    };
+
+    // Don't need to swap before writing as the above swaps for us if necessary.
+
+    Cyber180CPWriteBytes(processor, destinationPVA, &bytes[8-count], count);
+
     return 4;
 }
 

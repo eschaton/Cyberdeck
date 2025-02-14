@@ -224,6 +224,60 @@ NS_ASSUME_NONNULL_BEGIN
     XCTAssert(memcmp(expectedBytes, wordBytes, 8) == 0);
 }
 
+- (void)testInstruction_LBYTS
+{
+    // Xk = (Aj + D + XiR), right-justified based on count
+    // LBYTS,3 X2,A1,X3,0x4
+    union Cyber180CPInstructionWord instruction;
+    instruction._SjkiD.opcode = 0xD;
+    instruction._SjkiD.S = 3;
+    instruction._jkiD.j = 0x1;
+    instruction._jkiD.k = 0x2;
+    instruction._jkiD.i = 0x3;
+    instruction._jkiD.D = 0x4;
+
+    // Set up the registers and memory to put a word at 0x108 (loading only 0x108...0x10B of it).
+    Cyber180CPSetA(_processor, 0x1, 0x100);
+    Cyber180CPSetX(_processor, 0x3, 0x4);
+    CyberWord8 wordBytes[8] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
+    Cyber180CPWriteBytes(_processor, 0x108, wordBytes, 8);
+
+    CyberWord64 advance = Cyber180CPInstruction_LBYTS(_processor, instruction, 0x00);
+    XCTAssertEqual(4, advance);
+
+    CyberWord64 Xk = Cyber180CPGetX(_processor, 0x2);
+    XCTAssertEqual(0x0000000012345678, Xk);
+}
+
+- (void)testInstruction_SBYTS
+{
+    // (Aj + D + XiR) = Xk, right-justified based on count
+    // SBYTS,3 X2,A1,X3,0x4
+    union Cyber180CPInstructionWord instruction;
+    instruction._SjkiD.opcode = 0xD;
+    instruction._SjkiD.S = 3 + 7;
+    instruction._jkiD.j = 0x1;
+    instruction._jkiD.k = 0x2;
+    instruction._jkiD.i = 0x3;
+    instruction._jkiD.D = 0x4;
+
+    // Set up the registers and memory to put the right 4 bytes at 0x108
+    Cyber180CPSetA(_processor, 0x1, 0x100);
+    Cyber180CPSetX(_processor, 0x3, 0x4);
+    Cyber180CPSetX(_processor, 0x2, 0x12345678abcdef0);
+
+    CyberWord64 advance = Cyber180CPInstruction_SBYTS(_processor, instruction, 0x00);
+    XCTAssertEqual(4, advance);
+
+    CyberWord8 wordBytes[3] = {0};
+    Cyber180CPReadBytes(_processor, 0x108, wordBytes, 3);
+    CyberWord8 expectedBytes[3] = {0xbc, 0xde, 0xf0};
+    XCTAssert((memcmp(expectedBytes, wordBytes, 3) == 0),
+              @"expected: [%02x, %02x, %02x], actual: [%02x, %02x, %02x]",
+              expectedBytes[0], expectedBytes[1], expectedBytes[2],
+              wordBytes[0], wordBytes[1], wordBytes[2]);
+}
+
 @end
 
 

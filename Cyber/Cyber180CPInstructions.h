@@ -33,6 +33,8 @@ struct Cyber180CP;
 /// Since a Cyber 180 Central Processor instruction can be either 16 or 32 bits, there can be between 2 and 4 instructions per 64-bit word.
 ///
 /// The size/type are determined by the opcode; always use ``Cyber180CPInstructionAdvance`` to determine the true size of a fetched instruction.
+///
+/// - Note: The documentation says that, for `SjkiD` instructions, the opcode and S are 5 and 3 bits respectively, but everything works out better if they're 4 and 4. Other places in the documentation even treat them as 4 and 4 (e.g. `LBYTS` and `SBYTS` are documented as `DSjkiD` and refer to `S` as being in the range `0` through `F`).
 union Cyber180CPInstructionWord {
 
     /// The raw in-memory value of the instruction word.
@@ -62,8 +64,8 @@ union Cyber180CPInstructionWord {
 
     struct {
 #if BIG_ENDIAN
-        unsigned opcode : 5;
-        unsigned S : 3;
+        unsigned opcode : 4;
+        unsigned S : 4;
         unsigned j : 4;
         unsigned k : 4;
         unsigned i : 4;
@@ -73,8 +75,8 @@ union Cyber180CPInstructionWord {
         unsigned i : 4;
         unsigned k : 4;
         unsigned j : 4;
-        unsigned S : 3;
-        unsigned opcode : 5;
+        unsigned S : 4;
+        unsigned opcode : 4;
 #endif
     } CYBER_PACKED _SjkiD;
 

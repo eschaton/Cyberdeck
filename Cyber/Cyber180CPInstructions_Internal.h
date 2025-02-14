@@ -67,8 +67,11 @@ CYBER_EXPORT CyberWord64 Cyber180CPInstruction_CalculateBitMask(CyberWord64 bit_
 /// Calculate `Aj` displaced by (signed) `8*Q`.
 CYBER_EXPORT CyberWord48 Cyber180CPInstruction_CalculateAddressUsingSignedDisplacement16(CyberWord48 Aj, CyberWord16 Q);
 
-/// Calculate `Aj` displaced by `8*D` and indexed by `8*XiR`.
+/// Calculate `Aj` displaced by `D` and indexed by `XiR`.
 CYBER_EXPORT CyberWord48 Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12(CyberWord48 Aj, CyberWord32 XiR, CyberWord12 D);
+
+/// Calculate `Aj` displaced by `8*D` and indexed by `8*XiR`.
+CYBER_EXPORT CyberWord48 Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12Times8(CyberWord48 Aj, CyberWord32 XiR, CyberWord12 D);
 
 
 // MARK: - Instruction Declarations
