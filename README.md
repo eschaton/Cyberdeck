@@ -24,8 +24,8 @@ This is the implementation status of the 159 distinct Cyber 180 Central Processo
 |   CPYXX       |                       |                           |
 |   CPYSX       |                       |                           |
 |   CPYXS       |                       |                           |
-|   INCX        | ✔️                    | To do: Detect overflow    |
-|   DECX        | ✔️                    | To do: Detect overflow    |
+|   INCX        | ✔️                    | To do: Handle overflow    |
+|   DECX        | ✔️                    | To do: Handle overflow    |
 |   LBSET       |                       |                           |
 |   TPAGE       |                       |                           |
 |   LPAGE       |                       |                           |
@@ -36,12 +36,12 @@ This is the implementation status of the 159 distinct Cyber 180 Central Processo
 |   INHX        |                       |                           |
 |   MARK        |                       |                           |
 |   ENTZOS      |                       |                           |
-|   ADDR        |                       |                           |
-|   SUBR        |                       |                           |
+|   ADDR        | ✔️                    | To do: Handle overflow    |
+|   SUBR        | ✔️                    | To do: Handle overflow    |
 |   MULR        |                       |                           |
 |   DIVR        |                       |                           |
-|   ADDX        | ✔️                    | To do: Detect overflow    |
-|   SUBX        | ✔️                    | To do: Detect overflow    |
+|   ADDX        | ✔️                    | To do: Handle overflow    |
+|   SUBX        | ✔️                    | To do: Handle overflow    |
 |   MULX        |                       |                           |
 |   DIVX        |                       |                           |
 |   INCR        |                       |                           |
@@ -112,7 +112,7 @@ This is the implementation status of the 159 distinct Cyber 180 Central Processo
 |   LBIT        |                       |                           |
 |   SBIT        |                       |                           |
 |   ADDRQ       |                       |                           |
-|   ADDXQ       | ✔️                    | To do: Detect overflow    |
+|   ADDXQ       | ✔️                    | To do: Handle overflow    |
 |   MULRQ       |                       |                           |
 |   ENTE        | ✔️                    |                           |
 |   ADDAQ       |                       |                           |

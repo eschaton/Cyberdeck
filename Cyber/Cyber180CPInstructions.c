@@ -399,19 +399,6 @@ CyberWord48 Cyber180CPInstruction_CalculateAddressUsingIndex32WithDisplacement12
 }
 
 
-int64_t Cyber180Instruction_Add64(int64_t a, int64_t b, bool *overflowed)
-{
-    // TODO: Detect overflow.
-    return a + b;
-}
-
-int64_t Cyber180Instruction_Subtract64(int64_t a, int64_t b, bool *overflowed)
-{
-    // TODO: Detect overflow.
-    return a - b;
-}
-
-
 // MARK: - Instruction Implementations
 
 CyberWord64 Cyber180CPInstruction_HALT(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
@@ -513,10 +500,10 @@ CyberWord64 Cyber180CPInstruction_CPYXS(struct Cyber180CP *processor, union Cybe
 /// Integer Sum, `Xk` replaced by `Xk` plus `j` (2.2.2.1.c, `10jk`)
 CyberWord64 Cyber180CPInstruction_INCX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t j = word._jk.j;
-    int64_t Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord64 j = word._jk.j;
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
     bool overflowed;
-    int64_t value = Cyber180Instruction_Add64(Xk, j, &overflowed);
+    CyberWord64 value = CyberWord64AddCheckingOverflow(Xk, j, &overflowed);
     if (overflowed) {
         // TODO: Arithmetic Overflow condition (2.8.3.10)
     }
@@ -529,10 +516,10 @@ CyberWord64 Cyber180CPInstruction_INCX(struct Cyber180CP *processor, union Cyber
 /// Integer Difference, `Xk` replaced by `Xk` minus `j` (2.2.2.2.b, `11jk`)
 CyberWord64 Cyber180CPInstruction_DECX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t j = word._jk.j;
-    int64_t Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord64 j = word._jk.j;
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
     bool overflowed;
-    int64_t value = Cyber180Instruction_Subtract64(Xk, j, &overflowed);
+    CyberWord64 value = CyberWord64SubtractCheckingOverflow(Xk, j, &overflowed);
     if (overflowed) {
         // TODO: Arithmetic Overflow condition (2.8.3.10)
     }
@@ -602,15 +589,38 @@ CyberWord64 Cyber180CPInstruction_ENTZOS(struct Cyber180CP *processor, union Cyb
 }
 
 
+/// Integer Sum, `XkR` replaced by `XkR` plus `XjR` (2.2.2.5.a, `20jk`)
 CyberWord64 Cyber180CPInstruction_ADDR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord32 XkR = Xk & 0x00000000FFFFFFFF;
+    CyberWord32 XjR = Cyber180CPGetX(processor, word._jk.j) & 0x00000000FFFFFFFF;
+    bool overflowed;
+    CyberWord32 value = CyberWord32AddCheckingOverflow(XkR, XjR, &overflowed);
+    if (overflowed) {
+        // TODO: Arithmetic Overflow condition (2.8.3.10)
+    }
+    CyberWord64 Xk_new = (Xk & 0xFFFFFFFF00000000) | ((CyberWord64)value);
+    Cyber180CPSetX(processor, word._jk.k, Xk_new);
+
+    return 2;
 }
 
 
 CyberWord64 Cyber180CPInstruction_SUBR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord32 XkR = Xk & 0x00000000FFFFFFFF;
+    CyberWord32 XjR = Cyber180CPGetX(processor, word._jk.j) & 0x00000000FFFFFFFF;
+    bool overflowed;
+    CyberWord32 value = CyberWord32SubtractCheckingOverflow(XkR, XjR, &overflowed);
+    if (overflowed) {
+        // TODO: Arithmetic Overflow condition (2.8.3.10)
+    }
+    CyberWord64 Xk_new = (Xk & 0xFFFFFFFF00000000) | ((CyberWord64)value);
+    Cyber180CPSetX(processor, word._jk.k, Xk_new);
+
+    return 2;
 }
 
 
@@ -629,10 +639,10 @@ CyberWord64 Cyber180CPInstruction_DIVR(struct Cyber180CP *processor, union Cyber
 /// Integer Sum, `Xk` replaced by `Xk` plus `Xj` (2.2.2.1.a, `24jk`)
 CyberWord64 Cyber180CPInstruction_ADDX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t Xk = Cyber180CPGetX(processor, word._jk.k);
-    int64_t Xj = Cyber180CPGetX(processor, word._jk.j);
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord64 Xj = Cyber180CPGetX(processor, word._jk.j);
     bool overflowed;
-    int64_t value = Cyber180Instruction_Add64(Xk, Xj, &overflowed);
+    CyberWord64 value = CyberWord64AddCheckingOverflow(Xk, Xj, &overflowed);
     if (overflowed) {
         // TODO: Arithmetic Overflow condition (2.8.3.10)
     }
@@ -645,10 +655,10 @@ CyberWord64 Cyber180CPInstruction_ADDX(struct Cyber180CP *processor, union Cyber
 /// Integer Difference, `Xk` replaced by `Xk` minus `Xj` (2.2.2.2.a, `25jk`)
 CyberWord64 Cyber180CPInstruction_SUBX(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t Xk = Cyber180CPGetX(processor, word._jk.k);
-    int64_t Xj = Cyber180CPGetX(processor, word._jk.j);
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord64 Xj = Cyber180CPGetX(processor, word._jk.j);
     bool overflowed;
-    int64_t value = Cyber180Instruction_Subtract64(Xk, Xj, &overflowed);
+    CyberWord64 value = CyberWord64SubtractCheckingOverflow(Xk, Xj, &overflowed);
     if (overflowed) {
         // TODO: Arithmetic Overflow condition (2.8.3.10)
     }
@@ -1122,12 +1132,13 @@ CyberWord64 Cyber180CPInstruction_ADDRQ(struct Cyber180CP *processor, union Cybe
 /// Integer Sum, `Xk` replaced by `Xk` plus `Xj` plus `Q` (2.2.2.1.b, `8BjkQ`)
 CyberWord64 Cyber180CPInstruction_ADDXQ(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t Xk = Cyber180CPGetX(processor, word._jkQ.k);
-    int64_t Xj = Cyber180CPGetX(processor, word._jkQ.j);
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jkQ.k);
+    CyberWord64 Xj = Cyber180CPGetX(processor, word._jkQ.j);
     int64_t Q = Signed64FromSigned16ViaExtend(word._jkQ.Q);
-    int64_t addend = Xj + Q;
+    int64_t addend_signed = Xj + Q;
+    CyberWord64 addend = addend_signed;
     bool overflowed;
-    int64_t value = Cyber180Instruction_Add64(Xk, addend, &overflowed);
+    CyberWord64 value = CyberWord64AddCheckingOverflow(Xk, addend, &overflowed);
     if (overflowed) {
         // TODO: Arithmetic Overflow condition (2.8.3.10)
     }

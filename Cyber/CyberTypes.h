@@ -99,6 +99,36 @@ static inline CyberWord32 CyberWord32Swap(CyberWord32 word)
 #endif
 }
 
+/// Add a 32-bit Cyber word as two signed values, optionally checking overflow.
+static inline CyberWord32 CyberWord32AddCheckingOverflow(CyberWord32 a, CyberWord32 b, bool * _Nullable overflowed)
+{
+    int32_t sa = a;
+    int32_t sb = b;
+
+    int32_t result = sa + sb;
+
+    if (overflowed) {
+        if ((sa > 0) && (sb > 0)) {
+            *overflowed = result < 0;
+        } else if ((sa < 0) && (sb < 0)) {
+            *overflowed = result > 0;
+        } else {
+            *overflowed = false;
+        }
+    }
+
+    return result;
+}
+
+/// Subtract a 32-bit Cyber word as two signed values, optionally checking overflow.
+static inline CyberWord32 CyberWord32SubtractCheckingOverflow(CyberWord32 a, CyberWord32 b, bool * _Nullable overflowed)
+{
+    int32_t sa = a;
+    int32_t sb = b;
+
+    return CyberWord32AddCheckingOverflow(sa, -sb, overflowed);
+}
+
 /// Swap a 64-bit Cyber word if necessary; the Cyber is big-endian.
 static inline CyberWord64 CyberWord64Swap(CyberWord64 word)
 {
@@ -114,6 +144,36 @@ static inline CyberWord64 CyberWord64Swap(CyberWord64 word)
             | ((word & 0x000000000000FF00) << 40)
             | ((word & 0x00000000000000FF) << 56));
 #endif
+}
+
+/// Add a 64-bit Cyber word as two signed values, optionally checking overflow.
+static inline CyberWord64 CyberWord64AddCheckingOverflow(CyberWord64 a, CyberWord64 b, bool * _Nullable overflowed)
+{
+    int64_t sa = a;
+    int64_t sb = b;
+
+    int64_t result = sa + sb;
+
+    if (overflowed) {
+        if ((sa > 0) && (sb > 0)) {
+            *overflowed = result < 0;
+        } else if ((sa < 0) && (sb < 0)) {
+            *overflowed = result > 0;
+        } else {
+            *overflowed = false;
+        }
+    }
+
+    return result;
+}
+
+/// Subtract a 64-bit Cyber word as two signed values, optionally checking overflow.
+static inline CyberWord64 CyberWord64SubtractCheckingOverflow(CyberWord64 a, CyberWord64 b, bool * _Nullable overflowed)
+{
+    int64_t sa = a;
+    int64_t sb = b;
+
+    return CyberWord64AddCheckingOverflow(sa, -sb, overflowed);
 }
 
 
