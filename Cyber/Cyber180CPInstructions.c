@@ -680,15 +680,39 @@ CyberWord64 Cyber180CPInstruction_DIVX(struct Cyber180CP *processor, union Cyber
 }
 
 
+/// Integer Sum, `XkR` replaced by `XkR` plus `j` (2.2.2.5.c, `28jk`)
 CyberWord64 Cyber180CPInstruction_INCR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord32 XkR = Xk & 0x00000000FFFFFFFF;
+    CyberWord32 j = word._jk.j;
+    bool overflowed;
+    CyberWord32 value = CyberWord32AddCheckingOverflow(XkR, j, &overflowed);
+    if (overflowed) {
+        // TODO: Arithmetic Overflow condition (2.8.3.10)
+    }
+    CyberWord64 Xk_new = (Xk & 0xFFFFFFFF00000000) | ((CyberWord64)value);
+    Cyber180CPSetX(processor, word._jk.k, Xk_new);
+
+    return 2;
 }
 
 
+/// Integer Difference, `XkR` replaced by `XkR` minus `j` (2.2.2.6.b, `29jk`)
 CyberWord64 Cyber180CPInstruction_DECR(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    return 0;// TODO: Implement
+    CyberWord64 Xk = Cyber180CPGetX(processor, word._jk.k);
+    CyberWord32 XkR = Xk & 0x00000000FFFFFFFF;
+    CyberWord32 j = word._jk.j;
+    bool overflowed;
+    CyberWord32 value = CyberWord32SubtractCheckingOverflow(XkR, j, &overflowed);
+    if (overflowed) {
+        // TODO: Arithmetic Overflow condition (2.8.3.10)
+    }
+    CyberWord64 Xk_new = (Xk & 0xFFFFFFFF00000000) | ((CyberWord64)value);
+    Cyber180CPSetX(processor, word._jk.k, Xk_new);
+
+    return 2;
 }
 
 

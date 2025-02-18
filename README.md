@@ -44,8 +44,8 @@ This is the implementation status of the 159 distinct Cyber 180 Central Processo
 |   SUBX        | ✔️                    | To do: Handle overflow    |
 |   MULX        |                       |                           |
 |   DIVX        |                       |                           |
-|   INCR        |                       |                           |
-|   DECR        |                       |                           |
+|   INCR        | ✔️                    | To do: Handle overflow    |
+|   DECR        | ✔️                    | To do: Handle overflow    |
 |   ADDAX       |                       |                           |
 |   CMPR        |                       |                           |
 |   CMPX        |                       |                           |

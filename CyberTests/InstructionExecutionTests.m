@@ -194,6 +194,44 @@ NS_ASSUME_NONNULL_BEGIN
     // TODO: Test SUBX overflow.
 }
 
+- (void)testInstruction_INCR
+{
+    // XkR = XkR + j
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x28;
+    instruction._jk.j = 0x3;
+    instruction._jk.k = 0x2;
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234567887654321);
+    CyberWord64 advance = Cyber180CPInstruction_INCR(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(0x1234567887654324, X2);
+
+    // TODO: Test INCR overflow.
+}
+
+- (void)testInstruction_DECR
+{
+    // XkR = XkR - j
+    union Cyber180CPInstructionWord instruction;
+    instruction._jk.opcode = 0x29;
+    instruction._jk.j = 0x3;
+    instruction._jk.k = 0x2;
+
+    // Set up the registers and memory.
+    Cyber180CPSetX(_processor, 2, 0x1234567887654321);
+    CyberWord64 advance = Cyber180CPInstruction_DECR(_processor, instruction, 0x00);
+    XCTAssertEqual(2, advance);
+
+    CyberWord64 X2 = Cyber180CPGetX(_processor, 2);
+    XCTAssertEqual(0x123456788765431E, X2);
+
+    // TODO: Test DECR overflow.
+}
+
 - (void)testInstruction_ENTX
 {
     union Cyber180CPInstructionWord instruction;
