@@ -65,7 +65,7 @@ struct Cyber962 {
 };
 
 
-struct Cyber962 * _Nullable Cyber962Create(const char *identifier, size_t memorySize, int centralProcessors, int inputOutputUnits)
+struct Cyber962 * _Nullable Cyber962Create(const char *identifier, CyberWord32 memorySize, int centralProcessors, int inputOutputUnits)
 {
     assert(identifier != NULL);
     assert(memorySize <= (256 * 1024 * 1024));

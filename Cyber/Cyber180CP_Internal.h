@@ -30,6 +30,7 @@ CYBER_HEADER_BEGIN
 
 
 struct CyberThread;
+struct Cyber180Cache;
 
 
 /// The operating mode of a Central Process.
@@ -73,9 +74,10 @@ struct Cyber180CP {
 
     // FIXME: Flesh out register set.
 
-    // Caching
+    // Instruction & Data Cache
 
-    // FIXME: Flesh out cache.
+    /// 32KB write-back cache of most-recently-accessed instructions and data.
+    struct Cyber180Cache *_cache;
 };
 
 
@@ -95,15 +97,18 @@ CYBER_EXPORT CyberWord64 Cyber180CPGetXOr0(struct Cyber180CP *cp, int i);
 CYBER_EXPORT void Cyber180CPSetX(struct Cyber180CP *cp, int i, CyberWord64 value);
 
 
-/// Translate a virtual address to a physical address.
-CYBER_EXPORT CyberWord64 Cyber180CPTranslateAddress(struct Cyber180CP *cp, CyberWord64 virtualAddress);
+/// Translate a process virtual address to a system veirtual address.
+CYBER_EXPORT CyberWord48 Cyber180CPTranslatePVAToSVA(struct Cyber180CP *cp, CyberWord48 processVirtualAddress);
+
+//// Translate a system virtual address to a real memory address.
+CYBER_EXPORT CyberWord32 Cyber180CPTranslateSVAToRMA(struct Cyber180CP *cp, CyberWord48 systemVirtualAddress);
 
 
-/// Write bytes to a virtual address.
-CYBER_EXPORT void Cyber180CPWriteBytes(struct Cyber180CP *cp, CyberWord64 virtualAddress, CyberWord8 *buf, CyberWord32 count);
+/// Write bytes to a process virtual address.
+CYBER_EXPORT void Cyber180CPWriteBytes(struct Cyber180CP *cp, CyberWord48 processVirtualAddress, CyberWord8 *buf, CyberWord32 count);
 
-/// Read bytes from a virtual address.
-CYBER_EXPORT void Cyber180CPReadBytes(struct Cyber180CP *cp, CyberWord64 virtualAddress, CyberWord8 *buf, CyberWord32 count);
+/// Read bytes from a process virtual address.
+CYBER_EXPORT void Cyber180CPReadBytes(struct Cyber180CP *cp, CyberWord48 processVirtualAddress, CyberWord8 *buf, CyberWord32 count);
 
 
 CYBER_HEADER_END

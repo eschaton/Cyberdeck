@@ -36,7 +36,7 @@ struct Cyber180CM {
     struct Cyber962 *_system;
 
     /// Capacity of the Central Memory.
-    size_t _capacity;
+    CyberWord32 _capacity;
 
     /// Storage for the Central Memory.
     CyberWord64 *_storage;

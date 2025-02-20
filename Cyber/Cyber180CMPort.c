@@ -81,7 +81,7 @@ void Cyber180CMPortRelinquishLock(struct Cyber180CMPort *port)
 }
 
 
-void Cyber180CMPortReadWordsPhysical(struct Cyber180CMPort *port, CyberWord48 address, CyberWord64 *buffer, CyberWord32 wordCount)
+void Cyber180CMPortReadWordsPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord64 *buffer, CyberWord32 wordCount)
 {
     assert(port != NULL);
     struct Cyber180CM *cm = port->_centralMemory;
@@ -93,7 +93,7 @@ void Cyber180CMPortReadWordsPhysical(struct Cyber180CMPort *port, CyberWord48 ad
 
     Cyber180CMPortAcquireLock(port); {
         CyberWord64 *storage = cm->_storage;
-        CyberWord48 firstWord = address / 8;
+        CyberWord32 firstWord = address / 8;
 
         for (CyberWord32 i = 0; i < wordCount; i++) {
             buffer[i] = storage[firstWord + i];
@@ -101,8 +101,7 @@ void Cyber180CMPortReadWordsPhysical(struct Cyber180CMPort *port, CyberWord48 ad
     } Cyber180CMPortRelinquishLock(port);
 }
 
-
-void Cyber180CMPortWriteWordsPhysical(struct Cyber180CMPort *port, CyberWord48 address, CyberWord64 *buffer, CyberWord32 wordCount)
+void Cyber180CMPortWriteWordsPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord64 *buffer, CyberWord32 wordCount)
 {
     assert(port != NULL);
     struct Cyber180CM *cm = port->_centralMemory;
@@ -114,7 +113,7 @@ void Cyber180CMPortWriteWordsPhysical(struct Cyber180CMPort *port, CyberWord48 a
 
     Cyber180CMPortAcquireLock(port); {
         CyberWord64 *storage = cm->_storage;
-        CyberWord48 firstWord = address / 8;
+        CyberWord32 firstWord = address / 8;
 
         for (CyberWord32 i = 0; i < wordCount; i++) {
             storage[firstWord + i] = buffer[i];
@@ -123,7 +122,7 @@ void Cyber180CMPortWriteWordsPhysical(struct Cyber180CMPort *port, CyberWord48 a
 }
 
 
-void Cyber180CMPortReadBytesPhysical(struct Cyber180CMPort *port, CyberWord48 address, CyberWord8 *buffer, CyberWord32 byteCount)
+void Cyber180CMPortReadBytesPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord8 *buffer, CyberWord32 byteCount)
 {
     assert(port != NULL);
     struct Cyber180CM *cm = port->_centralMemory;
@@ -133,19 +132,11 @@ void Cyber180CMPortReadBytesPhysical(struct Cyber180CMPort *port, CyberWord48 ad
     assert((address + byteCount) <= cm->_capacity); // Don't allow rollover.
 
     Cyber180CMPortAcquireLock(port); {
-        CyberWord64 *storage = cm->_storage;
-        CyberWord48 firstWord = address / 8;
-        CyberWord48 firstOffset = address % 8;
-        CyberWord8 *firstByte = ((CyberWord8 *)&storage[firstWord]) + firstOffset;
-
-        for (CyberWord32 i = 0; i < byteCount; i++) {
-            buffer[i] = firstByte[i];
-        }
+        Cyber180CMPortReadBytesPhysical_Unlocked(port, address, buffer, byteCount);
     } Cyber180CMPortRelinquishLock(port);
 }
 
-
-void Cyber180CMPortWriteBytesPhysical(struct Cyber180CMPort *port, CyberWord48 address, CyberWord8 *buffer, CyberWord32 byteCount)
+void Cyber180CMPortWriteBytesPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord8 *buffer, CyberWord32 byteCount)
 {
     assert(port != NULL);
     struct Cyber180CM *cm = port->_centralMemory;
@@ -155,20 +146,41 @@ void Cyber180CMPortWriteBytesPhysical(struct Cyber180CMPort *port, CyberWord48 a
     assert((address + byteCount) <= cm->_capacity); // Don't allow rollover.
 
     Cyber180CMPortAcquireLock(port); {
-        CyberWord64 *storage = cm->_storage;
-        CyberWord48 firstWord = address / 8;
-        CyberWord48 firstOffset = address % 8;
-        CyberWord8 *firstByte = ((CyberWord8 *)&storage[firstWord]) + firstOffset;
-
-        for (CyberWord32 i = 0; i < byteCount; i++) {
-            firstByte[i] = buffer[i];
-        }
-
+        Cyber180CMPortWriteBytesPhysical_Unlocked(port, address, buffer, byteCount);
     } Cyber180CMPortRelinquishLock(port);
 }
 
 
-CyberWord64 Cyber180CMPortReadWordPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord48 address)
+void Cyber180CMPortReadBytesPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address, CyberWord8 *buffer, CyberWord32 byteCount)
+{
+    struct Cyber180CM *cm = port->_centralMemory;
+
+    CyberWord64 *storage = cm->_storage;
+    CyberWord32 firstWord = address / 8;
+    CyberWord32 firstOffset = address % 8;
+    CyberWord8 *firstByte = ((CyberWord8 *)&storage[firstWord]) + firstOffset;
+
+    for (CyberWord32 i = 0; i < byteCount; i++) {
+        buffer[i] = firstByte[i];
+    }
+}
+
+void Cyber180CMPortWriteBytesPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address, CyberWord8 *buffer, CyberWord32 byteCount)
+{
+    struct Cyber180CM *cm = port->_centralMemory;
+
+    CyberWord64 *storage = cm->_storage;
+    CyberWord32 firstWord = address / 8;
+    CyberWord32 firstOffset = address % 8;
+    CyberWord8 *firstByte = ((CyberWord8 *)&storage[firstWord]) + firstOffset;
+
+    for (CyberWord32 i = 0; i < byteCount; i++) {
+        firstByte[i] = buffer[i];
+    }
+}
+
+
+CyberWord64 Cyber180CMPortReadWordPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address)
 {
     assert(port != NULL);
     struct Cyber180CM *cm = port->_centralMemory;
@@ -176,12 +188,12 @@ CyberWord64 Cyber180CMPortReadWordPhysical_Unlocked(struct Cyber180CMPort *port,
     assert(address < cm->_capacity);
 
     CyberWord64 *storage = cm->_storage;
-    CyberWord48 wordIndex = address / 8;
+    CyberWord32 wordIndex = address / 8;
 
     return storage[wordIndex];
 }
 
-void Cyber180CMPortWriteWordPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord48 address, CyberWord64 word)
+void Cyber180CMPortWriteWordPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address, CyberWord64 word)
 {
     assert(port != NULL);
     struct Cyber180CM *cm = port->_centralMemory;
@@ -189,7 +201,7 @@ void Cyber180CMPortWriteWordPhysical_Unlocked(struct Cyber180CMPort *port, Cyber
     assert(address < cm->_capacity);
 
     CyberWord64 *storage = cm->_storage;
-    CyberWord48 wordIndex = address / 8;
+    CyberWord32 wordIndex = address / 8;
 
     storage[wordIndex] = word;
 }

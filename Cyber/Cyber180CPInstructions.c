@@ -313,51 +313,6 @@ Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *p
 
 // MARK: - Instruction Implementation Utilities
 
-bool IN_RANGE(uint8_t value, uint8_t lower, uint8_t upper)
-{
-    return (value >= lower) && (value <= upper);
-}
-
-
-enum Cyber180CPInstructionType Cyber180CPGetInstructionType(union Cyber180CPInstructionWord instructionWord)
-{
-    CyberWord8 opcode = instructionWord._raw >> 24;
-
-    if      (IN_RANGE(opcode, 0x00, 0x3f)) { return Cyber180CPInstructionType_jk; }    // jk
-    else if (IN_RANGE(opcode, 0x40, 0x6f)) { return Cyber180CPInstructionType_jkiD; }  // jkiD
-    else if (IN_RANGE(opcode, 0x70, 0x7f)) { return Cyber180CPInstructionType_jk; }    // jk(2)
-    else if (IN_RANGE(opcode, 0x80, 0x9f)) { return Cyber180CPInstructionType_jkQ; }   // jkQ
-    else if (IN_RANGE(opcode, 0xa0, 0xaf)) { return Cyber180CPInstructionType_jkiD; }  // jkiD
-    else if (IN_RANGE(opcode, 0xb0, 0xbf)) { return Cyber180CPInstructionType_jkQ; }   // jkQ
-    else if (IN_RANGE(opcode, 0xc0, 0xdf)) { return Cyber180CPInstructionType_SjkiD; } // SjkiD
-    else if (IN_RANGE(opcode, 0xe0, 0xef)) { return Cyber180CPInstructionType_jkiD; }  // jkiD(2)
-    else if (IN_RANGE(opcode, 0xf0, 0xff)) { return Cyber180CPInstructionType_jkiD; }  // jkiD(1)
-    else {
-        assert(false); // Should be unreachable.
-    }
-}
-
-CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instructionWord)
-{
-    switch (Cyber180CPGetInstructionType(instructionWord)) {
-        case Cyber180CPInstructionType_jk:    return 2;
-        case Cyber180CPInstructionType_jkiD:  return 4;
-        case Cyber180CPInstructionType_SjkiD: return 4;
-        case Cyber180CPInstructionType_jkQ:   return 4;
-    }
-}
-
-
-int32_t Signed32FromSigned16ViaExtend(int16_t word16)
-{
-    return word16;
-}
-
-int64_t Signed64FromSigned16ViaExtend(int16_t word16)
-{
-    return word16;
-}
-
 CyberWord64 Cyber180CPInstruction_CalculateBitMask(CyberWord64 bit_pos, CyberWord64 bit_len)
 {
     CyberWord64 bits = 0;
@@ -1113,7 +1068,7 @@ CyberWord64 Cyber180CPInstruction_SA(struct Cyber180CP *processor, union Cyber18
 {
     int64_t Ak = processor->_regA[word._jkQ.k] & 0x0000FFFFFFFFFFFF;
     int64_t Aj = processor->_regA[word._jkQ.j] & 0x0000FFFFFFFFFFFF;
-    int64_t signed_Q = Signed32FromSigned16ViaExtend(word._jkQ.Q);
+    int64_t signed_Q = CyberWord16SignExtendedTo64(word._jkQ.Q);
     CyberWord48 AjQ = (Aj + signed_Q) & 0x0000FFFFFFFFFFFF;
 
     CyberWord8 *pAk = ((CyberWord8 *)&Ak) + 2;
@@ -1158,7 +1113,7 @@ CyberWord64 Cyber180CPInstruction_ADDXQ(struct Cyber180CP *processor, union Cybe
 {
     CyberWord64 Xk = Cyber180CPGetX(processor, word._jkQ.k);
     CyberWord64 Xj = Cyber180CPGetX(processor, word._jkQ.j);
-    int64_t Q = Signed64FromSigned16ViaExtend(word._jkQ.Q);
+    int64_t Q = CyberWord16SignExtendedTo64(word._jkQ.Q);
     int64_t addend_signed = Xj + Q;
     CyberWord64 addend = addend_signed;
     bool overflowed;
@@ -1181,7 +1136,7 @@ CyberWord64 Cyber180CPInstruction_MULRQ(struct Cyber180CP *processor, union Cybe
 /// Enter Xk, Signed Immediate (2.2.6.2, 8DjkQ)
 CyberWord64 Cyber180CPInstruction_ENTE(struct Cyber180CP *processor, union Cyber180CPInstructionWord word, CyberWord64 address)
 {
-    int64_t signed_Q = Signed64FromSigned16ViaExtend(word._jkQ.Q);
+    int64_t signed_Q = CyberWord16SignExtendedTo64(word._jkQ.Q);
     int k = word._jkQ.k;
     Cyber180CPSetX(processor, k, signed_Q);
     return 4;

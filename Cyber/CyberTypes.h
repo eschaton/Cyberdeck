@@ -28,6 +28,11 @@
 
 CYBER_HEADER_BEGIN
 
+
+/// A 4-bit Cyber word.
+typedef uint8_t CyberWord4;
+
+
 /// A 6-bit Cyber word.
 typedef uint8_t CyberWord6;
 
@@ -68,7 +73,7 @@ typedef uint64_t CyberWord60;
 typedef uint64_t CyberWord64;
 
 
-// MARK: - Endianness
+// MARK: - Endianness Utilities
 
 #if BIG_ENDIAN
 #define CYBER_BIG_ENDIAN 1
@@ -98,6 +103,47 @@ static inline CyberWord32 CyberWord32Swap(CyberWord32 word)
             | ((word & 0x000000FF) << 24));
 #endif
 }
+
+/// Swap a 64-bit Cyber word if necessary; the Cyber is big-endian.
+static inline CyberWord64 CyberWord64Swap(CyberWord64 word)
+{
+#if CYBER_BIG_ENDIAN
+    return word;
+#else
+    return (  ((word & 0xFF00000000000000) >> 56)
+            | ((word & 0x00FF000000000000) >> 40)
+            | ((word & 0x0000FF0000000000) >> 24)
+            | ((word & 0x000000FF00000000) >>  8)
+            | ((word & 0x00000000FF000000) <<  8)
+            | ((word & 0x0000000000FF0000) << 24)
+            | ((word & 0x000000000000FF00) << 40)
+            | ((word & 0x00000000000000FF) << 56));
+#endif
+}
+
+// MARK: - Other Utilities
+
+/// Indicate whether a CyberWord8 value is within the given range.
+static inline bool CyberWord8WithinRange(CyberWord8 value, CyberWord8 lower, CyberWord8 upper)
+{
+    return (value >= lower) && (value <= upper);
+}
+
+
+/// Get a sign-extended 32-bit value from a CyberWord16.
+static inline int32_t CyberWord16SignExtendedTo32(CyberWord16 word16)
+{
+    int16_t word16_signed = word16;
+    return word16_signed;
+}
+
+/// Get a sign-extended 64-bit value from a CyberWord16.
+static inline int64_t CyberWord16SignExtendedTo64(CyberWord16 word16)
+{
+    int16_t word16_signed = word16;
+    return word16_signed;
+}
+
 
 /// Add a 32-bit Cyber word as two signed values, optionally checking overflow.
 static inline CyberWord32 CyberWord32AddCheckingOverflow(CyberWord32 a, CyberWord32 b, bool * _Nullable overflowed)
@@ -129,22 +175,6 @@ static inline CyberWord32 CyberWord32SubtractCheckingOverflow(CyberWord32 a, Cyb
     return CyberWord32AddCheckingOverflow(sa, -sb, overflowed);
 }
 
-/// Swap a 64-bit Cyber word if necessary; the Cyber is big-endian.
-static inline CyberWord64 CyberWord64Swap(CyberWord64 word)
-{
-#if CYBER_BIG_ENDIAN
-    return word;
-#else
-    return (  ((word & 0xFF00000000000000) >> 56)
-            | ((word & 0x00FF000000000000) >> 40)
-            | ((word & 0x0000FF0000000000) >> 24)
-            | ((word & 0x000000FF00000000) >>  8)
-            | ((word & 0x00000000FF000000) <<  8)
-            | ((word & 0x0000000000FF0000) << 24)
-            | ((word & 0x000000000000FF00) << 40)
-            | ((word & 0x00000000000000FF) << 56));
-#endif
-}
 
 /// Add a 64-bit Cyber word as two signed values, optionally checking overflow.
 static inline CyberWord64 CyberWord64AddCheckingOverflow(CyberWord64 a, CyberWord64 b, bool * _Nullable overflowed)

@@ -132,10 +132,6 @@ typedef CyberWord64 (*Cyber180CPInstruction)(struct Cyber180CP *processor, union
 CYBER_EXPORT Cyber180CPInstruction _Nullable Cyber180CPInstructionDecode(struct Cyber180CP *processor, union Cyber180CPInstructionWord instructionWord, CyberWord64 address);
 
 
-/// Gets the size of the given instruction word, *which may be shorter than* `sizeof(instructionWord)`.
-CYBER_EXPORT CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instructionWord);
-
-
 CYBER_HEADER_END
 
 #endif /* __CYBER_CYBER180CPINSTRUCTIONS_H__ */
