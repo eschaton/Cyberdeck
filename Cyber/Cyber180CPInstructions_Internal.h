@@ -19,6 +19,8 @@
 
 #include <Cyber/Cyber180CPInstructions.h>
 
+#include <assert.h>
+
 
 #ifndef __CYBER_CYBER180CPINSTRUCTIONS_INTERNAL_H__
 #define __CYBER_CYBER180CPINSTRUCTIONS_INTERNAL_H__
@@ -36,23 +38,34 @@ enum Cyber180CPInstructionType {
 
 // MARK: - Instruction Implementation Utilities
 
-/// Get the instruciton type of the given instruction word.
-CYBER_EXPORT enum Cyber180CPInstructionType Cyber180CPGetInstructionType(union Cyber180CPInstructionWord instructionWord);
+/// Get the instruciton type of the given instruction opcode.
+static inline enum Cyber180CPInstructionType Cyber180CPGetInstructionType(CyberWord8 opcode)
+{
+    if      (CyberWord8WithinRange(opcode, 0x00, 0x3f)) { return Cyber180CPInstructionType_jk; }    // jk
+    else if (CyberWord8WithinRange(opcode, 0x40, 0x6f)) { return Cyber180CPInstructionType_jkiD; }  // jkiD
+    else if (CyberWord8WithinRange(opcode, 0x70, 0x7f)) { return Cyber180CPInstructionType_jk; }    // jk(2)
+    else if (CyberWord8WithinRange(opcode, 0x80, 0x9f)) { return Cyber180CPInstructionType_jkQ; }   // jkQ
+    else if (CyberWord8WithinRange(opcode, 0xa0, 0xaf)) { return Cyber180CPInstructionType_jkiD; }  // jkiD
+    else if (CyberWord8WithinRange(opcode, 0xb0, 0xbf)) { return Cyber180CPInstructionType_jkQ; }   // jkQ
+    else if (CyberWord8WithinRange(opcode, 0xc0, 0xdf)) { return Cyber180CPInstructionType_SjkiD; } // SjkiD
+    else if (CyberWord8WithinRange(opcode, 0xe0, 0xef)) { return Cyber180CPInstructionType_jkiD; }  // jkiD(2)
+    else if (CyberWord8WithinRange(opcode, 0xf0, 0xff)) { return Cyber180CPInstructionType_jkiD; }  // jkiD(1)
+    else {
+        assert(false); // Should be unreachable.
+    }
+}
 
-/// Indicate whether the given value is in the given range.
-CYBER_EXPORT bool IN_RANGE(uint8_t value, uint8_t lower, uint8_t upper);
+/// Gets the size of the instruction word for the given opcode, *which may be shorter than* `sizeof(instructionWord)`.
+static inline CyberWord64 Cyber180CPInstructionAdvance(CyberWord8 opcode)
+{
+    switch (Cyber180CPGetInstructionType(opcode)) {
+        case Cyber180CPInstructionType_jk:    return 2;
+        case Cyber180CPInstructionType_jkiD:  return 4;
+        case Cyber180CPInstructionType_SjkiD: return 4;
+        case Cyber180CPInstructionType_jkQ:   return 4;
+    }
+}
 
-/// Get the type of the instruction given the instruction word.
-CYBER_EXPORT enum Cyber180CPInstructionType Cyber180CPGetInstructionType(union Cyber180CPInstructionWord instructionWord);
-
-/// The amount of space, in bytes, taken by a specific instruction.
-CYBER_EXPORT CyberWord64 Cyber180CPInstructionAdvance(union Cyber180CPInstructionWord instructionWord);
-
-/// Sign-extend a 16-bit word to a 32-bit word.
-CYBER_EXPORT int32_t Signed32FromSigned16ViaExtend(int16_t word16);
-
-/// Sign-extend a 16-bit word to a 64-bit word.
-CYBER_EXPORT int64_t Signed64FromSigned16ViaExtend(int16_t word16);
 
 /// Create a bit mask given a starting bit and length.
 ///

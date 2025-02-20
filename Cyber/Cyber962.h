@@ -44,7 +44,7 @@ struct Cyber962IOU;
 ///   - inputOutputUnits: Number of Input/Output Units in the system, 1 to 3.
 ///
 /// - Returns: A configured Cyber 962 system or `NULL` on failure.
-CYBER_EXPORT struct Cyber962 * _Nullable Cyber962Create(const char * _Nonnull identifier, size_t memorySize, int centralProcessors, int inputOutputUnits);
+CYBER_EXPORT struct Cyber962 * _Nullable Cyber962Create(const char * _Nonnull identifier, CyberWord32 memorySize, int centralProcessors, int inputOutputUnits);
 
 /// Disposes of a Cyber 962 system.
 CYBER_EXPORT void Cyber962Dispose(struct Cyber962 * _Nullable system);

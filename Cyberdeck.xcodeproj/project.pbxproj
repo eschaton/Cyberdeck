@@ -80,6 +80,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			privateHeaders = (
 				Cyber.h,
+				Cyber180Cache.h,
 				Cyber180CM.h,
 				Cyber180CMPort.h,
 				Cyber180CP.h,

@@ -28,7 +28,7 @@
 CYBER_SOURCE_BEGIN
 
 
-struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system, size_t capacity, int ports)
+struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system, CyberWord32 capacity, int ports)
 {
     assert(system != NULL);
     assert(   (capacity == (64 * 1) * 1048576)

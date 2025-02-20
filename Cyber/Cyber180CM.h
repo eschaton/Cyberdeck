@@ -33,7 +33,7 @@ struct Cyber962;
 /// Create a Cyber 180 Central Memory attached to a system.
 ///
 /// - Parameters:
-///   - system: The system to which the Central Processor is attached.
+///   - system: The system to which the Central Memory is attached.
 ///   - capacity: The amount of memory (in bytes) to support.
 ///   - ports: The number of ports to support for accessing the Central Memory (minimum 2), which should be one per Central Processor and one per IOU in the system.
 ///
@@ -44,7 +44,7 @@ struct Cyber962;
 ///     - 256MB (32MW)
 ///
 /// - Returns: A Central Memory to connect to the system, or `NULL` on failure.
-CYBER_EXPORT struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system, size_t capacity, int ports);
+CYBER_EXPORT struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system, CyberWord32 capacity, int ports);
 
 
 /// Dispose of a Cyber180CM.
