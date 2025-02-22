@@ -43,16 +43,6 @@ CYBER_EXPORT void Cyber180CMPortAcquireLock(struct Cyber180CMPort *port);
 CYBER_EXPORT void Cyber180CMPortRelinquishLock(struct Cyber180CMPort *port);
 
 
-/// Read words from physical memory into a buffer.
-///
-/// - Warning: This acquires and holds the port access lock.
-CYBER_EXPORT void Cyber180CMPortReadWordsPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord64 *buffer, CyberWord32 wordCount);
-
-/// Write words from a buffer to physical memory.
-///
-/// - Warning: This acquires and holds the port access lock.
-CYBER_EXPORT void Cyber180CMPortWriteWordsPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord64 *buffer, CyberWord32 wordCount);
-
 /// Read bytes from physical memory into a buffer.
 ///
 /// - Warning: This acquires and holds the port access lock.
@@ -63,16 +53,6 @@ CYBER_EXPORT void Cyber180CMPortReadBytesPhysical(struct Cyber180CMPort *port, C
 /// - Warning: This acquires and holds the port access lock.
 CYBER_EXPORT void Cyber180CMPortWriteBytesPhysical(struct Cyber180CMPort *port, CyberWord32 address, CyberWord8 *buffer, CyberWord32 byteCount);
 
-
-/// Read a word from physical memory, without holding a lock.
-///
-/// - Warning: This **DOES NOT** acquires and holds the port access lock itself.
-CYBER_EXPORT CyberWord64 Cyber180CMPortReadWordPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address);
-
-/// Write a word to physical memory, without hodling a lock.
-///
-/// - Warning: This **DOES NOT** acquires and holds the port access lock itself.
-CYBER_EXPORT void Cyber180CMPortWriteWordPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address, CyberWord64 word);
 
 /// Read bytes from physical memory, without holding a lock.
 ///
