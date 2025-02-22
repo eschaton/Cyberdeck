@@ -36,8 +36,8 @@ struct Cyber180CacheLine {
     CyberWord32 _lastUse;
     
     /// The contents of the cache line.
-    CyberWord8 _words[64];
-} CYBER_PACKED;
+    CyberWord8 _contents[64];
+};
 
 
 struct Cyber180Cache {
