@@ -131,7 +131,7 @@ void Cyber180CacheAddOrUpdateDataForAddress(struct Cyber180Cache *cc, CyberWord3
 
     // Copy the new contents into the line.
 
-    memcpy(leastRecentlyUsedLine->_words, contents, Cyber180CacheLineSize);
+    memcpy(leastRecentlyUsedLine->_contents, contents, Cyber180CacheLineSize);
 
     // Update the line's use count.
 
@@ -150,7 +150,7 @@ bool Cyber180CacheGetDataForAddress(struct Cyber180Cache *cc, CyberWord32 realMe
     if (cacheLine) {
         const CyberWord32 uses = Cyber180CacheUpdateUses(cc);
         cacheLine->_lastUse = uses;
-        memcpy(contents, cacheLine->_words, Cyber180CacheLineSize);
+        memcpy(contents, cacheLine->_contents, Cyber180CacheLineSize);
         return true;
     } else {
         return false;
@@ -168,7 +168,7 @@ void Cyber180CacheEvictAddress(struct Cyber180Cache *cc, CyberWord32 realMemoryA
     if (cacheLine) {
         cacheLine->_address = 0x00000000;
         cacheLine->_lastUse = 0;
-        memset(cacheLine->_words, 0, Cyber180CacheLineSize);
+        memset(cacheLine->_contents, 0, Cyber180CacheLineSize);
     }
 }
 

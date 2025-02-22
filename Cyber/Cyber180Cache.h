@@ -78,14 +78,14 @@ CYBER_EXPORT void Cyber180CacheEvictAddress(struct Cyber180Cache *cc, CyberWord3
 /// Get the cache line address that would contain the given real memory address.
 static inline CyberWord32 Cyber180CacheGetLineAddressForAddress(CyberWord32 realMemoryAddress)
 {
-    return realMemoryAddress & 0xFFFFFFC0;
+    return realMemoryAddress & ~(Cyber180CacheLineSize - 1);
 }
 
 
 /// Get the cache line offset for the byte identified by the given real memory address.
 static inline CyberWord32 Cyber180CacheGetLineOffsetForAddress(CyberWord32 realMemoryAddress)
 {
-    return realMemoryAddress & 0x0000003F;
+    return realMemoryAddress & (Cyber180CacheLineSize - 1);
 }
 
 
