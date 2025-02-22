@@ -17,31 +17,20 @@
 //  limitations under the License.
 //
 
-#include <Cyber/Cyber180CMPort.h>
+#include "Cyber180CMPort_Internal.h"
 
 #include "Cyber180CM_Internal.h"
+#include "CyberQueue.h"
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 CYBER_SOURCE_BEGIN
 
 
-/// A Cyber180CMPort provides an access port to a Central Memory.
-struct Cyber180CMPort {
-
-    /// The Central Memory that this is a part of.
-    struct Cyber180CM *_centralMemory;
-
-    /// The index of this port within the Central Memory.
-    int _index;
-
-    // FIXME: Flesh out.
-};
-
-
-struct Cyber180CMPort * _Nullable Cyber180CMPortCreate(struct Cyber180CM * _Nonnull cm, int index)
+struct Cyber180CMPort * _Nullable Cyber180CMPortCreate(struct Cyber180CM * _Nonnull cm, int index, bool hasCacheEvictionQueue)
 {
     assert(cm != NULL);
     assert((index >= 0) && (index < 5));
@@ -50,6 +39,8 @@ struct Cyber180CMPort * _Nullable Cyber180CMPortCreate(struct Cyber180CM * _Nonn
 
     port->_centralMemory = cm;
     port->_index = index;
+
+    port->_cacheEvictionQueue = CyberQueueCreate();
 
     return port;
 }
@@ -119,9 +110,7 @@ void Cyber180CMPortReadBytesPhysical_Unlocked(struct Cyber180CMPort *port, Cyber
     CyberWord32 firstOffset = address % 8;
     CyberWord8 *firstByte = ((CyberWord8 *)&storage[firstWord]) + firstOffset;
 
-    for (CyberWord32 i = 0; i < byteCount; i++) {
-        buffer[i] = firstByte[i];
-    }
+    memcpy(buffer, firstByte, byteCount);
 }
 
 void Cyber180CMPortWriteBytesPhysical_Unlocked(struct Cyber180CMPort *port, CyberWord32 address, CyberWord8 *buffer, CyberWord32 byteCount)
@@ -133,10 +122,22 @@ void Cyber180CMPortWriteBytesPhysical_Unlocked(struct Cyber180CMPort *port, Cybe
     CyberWord32 firstOffset = address % 8;
     CyberWord8 *firstByte = ((CyberWord8 *)&storage[firstWord]) + firstOffset;
 
-    for (CyberWord32 i = 0; i < byteCount; i++) {
-        firstByte[i] = buffer[i];
-    }
+    memcpy(firstByte, buffer, byteCount);
+
+    Cyber180CMTriggerCacheEvictionsForAddressSpan_Unlocked(cm, port, address, byteCount);
 }
 
+void Cyber180CMPortTriggerCacheEvictionsForCacheLineRange(struct Cyber180CMPort *port, CyberWord32 startLineAddress, CyberWord32 lineCount)
+{
+    assert(port != NULL);
+
+    if (port->_cacheEvictionQueue) {
+        struct Cyber180CacheEvictionRange *range = calloc(1, sizeof(struct Cyber180CacheEvictionRange));
+        range->_startLineAddress = startLineAddress;
+        range->_lineCount = lineCount;
+
+        CyberQueueEnqueue(port->_cacheEvictionQueue, range);
+    }
+}
 
 CYBER_SOURCE_END

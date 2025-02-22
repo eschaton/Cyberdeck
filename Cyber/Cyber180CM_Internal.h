@@ -63,6 +63,20 @@ CYBER_EXPORT void Cyber180CMAcquireLock(struct Cyber180CM *cm);
 CYBER_EXPORT void Cyber180CMRelinquishLock(struct Cyber180CM *cm);
 
 
+/// Trigger the eviction of any caches attached to ports other than the one which is associated with this address range.
+///
+/// When writing to a memory, this is used to tell it to tell anything attached to ports other than the one performing the write that they need to evict any cache lines covering the associated address range.
+///
+/// - Parameters:
+///   - cm: The Central Memory being worked with.
+///   - port: The port on which the eviction originated, since whatever triggers an eviction should avoid triggering itself.
+///   - realMemoryAddress: The Real Memory Address of the first byte whose cache line should be evicted.
+///   - count: The number of bytes whose cache lines need eviction.
+///
+/// - Warning: This must be invoked with the lock held, which will happen automatically by the use from within Cyber180CMPort.
+CYBER_EXPORT void Cyber180CMTriggerCacheEvictionsForAddressSpan_Unlocked(struct Cyber180CM *cm, struct Cyber180CMPort *port, CyberWord32 realMemoryAddress, CyberWord32 count);
+
+
 CYBER_HEADER_END
 
 #endif /* __CYBER_CYBER180CM_INTERNAL_H__ */

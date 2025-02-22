@@ -19,6 +19,9 @@
 
 #include "Cyber180Cache_Internal.h"
 
+#include "Cyber180CMPort_Internal.h"
+#include "CyberQueue.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,6 +173,27 @@ void Cyber180CacheEvictAddress(struct Cyber180Cache *cc, CyberWord32 realMemoryA
         cacheLine->_lastUse = 0;
         memset(cacheLine->_contents, 0, Cyber180CacheLineSize);
     }
+}
+
+
+void Cyber180CacheProcessEvictionQueue(struct Cyber180Cache *cc, struct CyberQueue *evictionQueue)
+{
+    assert(cc != NULL);
+    assert(evictionQueue != NULL);
+
+    struct Cyber180CacheEvictionRange *evictionRange;
+
+    do {
+        evictionRange = CyberQueueTryDequeue(evictionQueue);
+        if (evictionRange) {
+            const CyberWord32 startLineAddress = evictionRange->_startLineAddress;
+            const CyberWord32 lineCount = evictionRange->_lineCount;
+
+            for (CyberWord32 line = 0; line < lineCount; line++) {
+                Cyber180CacheEvictAddress(cc, startLineAddress + (line * Cyber180CacheLineSize));
+            }
+        }
+    } while (evictionRange != NULL);
 }
 
 

@@ -19,9 +19,8 @@
 
 #include "Cyber180CP_Internal.h"
 
-#include <Cyber/Cyber180CMPort.h>
-
-#include "Cyber180Cache.h"
+#include "Cyber180Cache_Internal.h"
+#include "Cyber180CMPort_Internal.h"
 #include "Cyber180CPInstructions_Internal.h"
 #include "CyberThread.h"
 
@@ -272,6 +271,13 @@ void Cyber180CPWriteBytes(struct Cyber180CP *cp, CyberWord48 processVirtualAddre
     // TODO: Optimize by only getting a new RMA when crossing a page boundary.
 
     Cyber180CMPortAcquireLock(port); {
+
+        // Before doing anything else, have the cache process the port's current eviction queue.
+
+        Cyber180CacheProcessEvictionQueue(cp->_cache, port->_cacheEvictionQueue);
+
+        // Now transfer the data for each line.
+
         CyberWord8 lineBuf[Cyber180CacheLineSize];
         CyberWord48 currentLinePVA = transactionStartLinePVA;
         CyberWord32 copyCount = 0;
@@ -374,6 +380,13 @@ void Cyber180CPReadBytes(struct Cyber180CP *cp, CyberWord48 processVirtualAddres
     // TODO: Optimize by only getting a new RMA when crossing a page boundary.
 
     Cyber180CMPortAcquireLock(port); {
+
+        // Before doing anything else, have the cache process the port's current eviction queue.
+
+        Cyber180CacheProcessEvictionQueue(cp->_cache, port->_cacheEvictionQueue);
+
+        // Now transfer the data for each line.
+
         CyberWord8 lineBuf[Cyber180CacheLineSize];
         CyberWord48 currentLinePVA = transactionStartLinePVA;
         CyberWord32 copyCount = 0;

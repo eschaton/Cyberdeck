@@ -30,7 +30,7 @@ struct Cyber180CMPort;
 
 
 /// Create a Cyber 180 Central Memory access port and let it know its index.
-CYBER_EXPORT struct Cyber180CMPort * _Nullable Cyber180CMPortCreate(struct Cyber180CM *cm, int index);
+CYBER_EXPORT struct Cyber180CMPort * _Nullable Cyber180CMPortCreate(struct Cyber180CM *cm, int index, bool hasCacheEvictionQueue);
 
 /// Dispose of a Cyber 180 Central Memory access port.
 CYBER_EXPORT void Cyber180CMPortDispose(struct Cyber180CMPort * _Nullable port);

@@ -19,7 +19,9 @@
 
 #include "Cyber180CM_Internal.h"
 
-#include <Cyber/Cyber180CMPort.h>
+#include <Cyber/Cyber180Cache.h>
+
+#include "Cyber180CMPort_Internal.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -46,7 +48,7 @@ struct Cyber180CM * _Nullable Cyber180CMCreate(struct Cyber962 * _Nonnull system
     cm->_ports = calloc(ports, sizeof(struct Cyber180CMPort *));
 
     for (int port = 0; port < ports; port++) {
-        cm->_ports[port] = Cyber180CMPortCreate(cm, port);
+        cm->_ports[port] = Cyber180CMPortCreate(cm, port, port < 2); // only CP ports have caches, not IOUs
     }
 
     int err = pthread_mutex_init(&cm->_lock, NULL);
@@ -97,6 +99,26 @@ void Cyber180CMAcquireLock(struct Cyber180CM *cm)
 void Cyber180CMRelinquishLock(struct Cyber180CM *cm)
 {
     pthread_mutex_unlock(&cm->_lock);
+}
+
+
+void Cyber180CMTriggerCacheEvictionsForAddressSpan_Unlocked(struct Cyber180CM *cm, struct Cyber180CMPort *port, CyberWord32 realMemoryAddress, CyberWord32 count)
+{
+    assert(cm != NULL);
+    assert(port != NULL);
+
+    // Figure out the cache line range covered by the
+
+    CyberWord32 startLineAddress = Cyber180CacheGetLineAddressForAddress(realMemoryAddress);
+    CyberWord32 endLineAddress = Cyber180CacheGetLineAddressForAddress(realMemoryAddress + count - 1);
+    CyberWord32 lineCount = (endLineAddress - startLineAddress) / Cyber180CacheLineSize;
+
+    for (int i = 0; i < cm->_portCount; i++) {
+        struct Cyber180CMPort *onePort = cm->_ports[i];
+        if (onePort != port) {
+            Cyber180CMPortTriggerCacheEvictionsForCacheLineRange(onePort, startLineAddress, lineCount);
+        }
+    }
 }
 
 

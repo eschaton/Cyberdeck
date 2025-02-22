@@ -26,6 +26,9 @@
 CYBER_HEADER_BEGIN
 
 
+struct CyberQueue;
+
+
 /// One line in a ``Cyber180Cache``.
 struct Cyber180CacheLine {
 
@@ -63,6 +66,10 @@ struct Cyber180Cache {
 ///
 /// - Returns: The cache line that covers the given real memory address, or `NULL` if there is none.
 CYBER_EXPORT struct Cyber180CacheLine * _Nullable Cyber180CacheGetCacheLineForAddress(struct Cyber180Cache *cc, CyberWord32 realMemoryAddress);
+
+
+/// Process an eviction queue for the cache.
+CYBER_EXPORT void Cyber180CacheProcessEvictionQueue(struct Cyber180Cache *cc, struct CyberQueue *evictionQueue);
 
 
 CYBER_HEADER_END
