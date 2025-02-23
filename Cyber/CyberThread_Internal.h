@@ -29,6 +29,7 @@ CYBER_HEADER_BEGIN
 
 /// The current state of the thread.
 enum CyberThreadState {
+    CyberThreadState_New = -1,
     CyberThreadState_Stopped = 0,
     CyberThreadState_Started,
     CyberThreadState_Running,

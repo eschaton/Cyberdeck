@@ -49,7 +49,7 @@ struct CyberThread * _Nullable CyberThreadCreate(const char *name, struct CyberT
     thread->_functions.stop = threadFunctions->stop ?: CyberThreadFunctionPlaceholder;
     thread->_functions.terminate = threadFunctions->terminate ?: CyberThreadFunctionPlaceholder;
 
-    thread->_state = CyberStateCreate(CyberThreadState_Stopped);
+    thread->_state = CyberStateCreate(CyberThreadState_New);
     if (thread->_state == NULL) {
         assert(thread->_state != NULL); // halt here in debug build
         CyberThreadDispose(thread);
@@ -74,6 +74,11 @@ struct CyberThread * _Nullable CyberThreadCreate(const char *name, struct CyberT
     }
 
     (void) pthread_attr_destroy(&pthread_attrs);
+
+    // Wait for the thread to move from New to Stopped before returning to the caller. If the thread moves to any other state, that's a fatal error.
+
+    enum CyberThreadState awaitedState = CyberStateAwaitValueChange(CyberThreadState_New, thread->_state);
+    assert(awaitedState != CyberThreadState_New);
 
     return thread;
 }
@@ -134,16 +139,21 @@ static void * _Nullable CyberThreadPthreadFunction(void * _Nullable t)
         enum CyberThreadState state = CyberStateGetValue(thread->_state);
 
         switch (state) {
+            case CyberThreadState_New:
+                // The thread is brand new. At this point, the thread has finished its setup and can move to the stopped state, which CyberThreadCreate() is waiting for so callers can always assume that when it returns, the thread is stopped.
+                CyberStateSetValue(thread->_state, CyberThreadState_Stopped);
+                break;
+
             case CyberThreadState_Stopped:
                 // Call the stop function if there is one. (Calls placeholder if not.)
                 thread->_functions.stop(thread, thread->_context);
 
                 // Wait for the state to change out of Stopped.
-                state = CyberStateAwaitValueChange(state, thread->_state);
+                (void) CyberStateAwaitValueChange(state, thread->_state);
                 break;
 
             case CyberThreadState_Started:
-                // Call the stop function if there is one. (Calls placeholder if not.)
+                // Call the start function if there is one. (Calls placeholder if not.)
                 thread->_functions.start(thread, thread->_context);
 
                 // Transition to running state.
