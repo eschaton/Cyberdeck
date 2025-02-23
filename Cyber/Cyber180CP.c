@@ -79,8 +79,8 @@ void Cyber180CPDispose(struct Cyber180CP * _Nullable cp)
 {
     if (cp == NULL) return;
 
-    Cyber180CacheDispose(cp->_cache); cp->_cache = NULL;
-    CyberThreadDispose(cp->_thread); cp->_thread = NULL;
+    Cyber180CacheDispose(cp->_cache);
+    CyberThreadDispose(cp->_thread);
 
     free(cp);
 }
